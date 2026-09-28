@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FedAgri-Robust — Interactive Federated Learning Architecture & Presentation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-btn.active {
+      background-color: #1d4ed8;
+      color: white;
+      font-weight: 700;
+      border-color: #1d4ed8;
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+    }
+    .step-node.active {
+      border-color: #2563eb;
+      background-color: #eff6ff;
+      transform: scale(1.03);
+      box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+    }
+    .drift-arrow {
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .flow-line {
+      stroke-dasharray: 8;
+      animation: dash 1.5s linear infinite;
+    }
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -16;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 antialiased font-sans min-h-screen">
+
+  <!-- TOP HERO BAR -->
+  <header class="bg-slate-950/80 backdrop-blur border-b border-slate-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🌱 Federated Learning</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">PlantVillage 38 Classes</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">PyTorch + Flower</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+            <span>FedAgri-Robust</span>
+            <span class="text-xs px-2.5 py-1 rounded bg-blue-600/30 text-blue-300 font-semibold border border-blue-500/40">Review Defense Suite</span>
+          </h1>
+          <p class="text-slate-400 text-xs sm:text-sm mt-0.5">
+            Explaining Statistical Heterogeneity & FedProx Robustness across 4 CNN Architectures
+          </p>
+        </div>
+        
+        <!-- QUICK METRIC PILLS -->
+        <div class="flex items-center gap-3">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-right">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">Trained Samples</div>
+            <div class="text-lg font-black text-emerald-400 font-mono">54,305</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-right">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">ResNet50 Rescue</div>
+            <div class="text-lg font-black text-blue-400 font-mono">+19.0% F1</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-right">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">MobileNetV3 Bandwidth</div>
+            <div class="text-lg font-black text-amber-400 font-mono">1.19 GB</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN TABS -->
+      <nav class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-slate-800/80">
+        <button onclick="switchTab('tab-arch-interactive')" class="tab-btn active px-4 py-2 text-xs sm:text-sm rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition">
+          🚀 1. Interactive FL Architecture
+        </button>
+        <button onclick="switchTab('tab-drift-explainer')" class="tab-btn px-4 py-2 text-xs sm:text-sm rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition">
+          ⚖️ 2. Client Drift & FedProx Anchor
+        </button>
+        <button onclick="switchTab('tab-noniid-skew')" class="tab-btn px-4 py-2 text-xs sm:text-sm rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition">
+          🌾 3. Non-IID Dirichlet Simulator
+        </button>
+        <button onclick="switchTab('tab-model-comparison')" class="tab-btn px-4 py-2 text-xs sm:text-sm rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition">
+          📊 4. 4-Backbone Results & Tables
+        </button>
+        <button onclick="switchTab('tab-bandwidth-calc')" class="tab-btn px-4 py-2 text-xs sm:text-sm rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition">
+          📡 5. Communication Trade-off
+        </button>
+        <button onclick="switchTab('tab-defense-qa')" class="tab-btn px-4 py-2 text-xs sm:text-sm rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition">
+          🎯 6. Reviewer Q&A Defense
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN BODY CONTAINER -->
+  <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+
+    <!-- ========================================================================================= -->
+    <!-- TAB 1: INTERACTIVE FEDERATED ARCHITECTURE EXPLAINER -->
+    <!-- ========================================================================================= -->
+    <section id="tab-arch-interactive" class="tab-content block space-y-6">
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl backdrop-blur">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+              Interactive Federated Architecture: How It Works Step-by-Step
+            </h2>
+            <p class="text-sm text-slate-400">
+              Click the step buttons or "Play Next Step" to demonstrate how weights move between the Central Server and the 5 Edge Farms.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="prevStep()" class="px-3 py-1.5 rounded-lg bg-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-600 transition">◀ Previous</button>
+            <button onclick="nextStep()" class="px-4 py-1.5 rounded-lg bg-blue-600 text-xs font-bold text-white hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition">Play Next Step ▶</button>
+            <button onclick="resetArch()" class="px-3 py-1.5 rounded-lg bg-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-600 transition">Reset</button>
+          </div>
+        </div>
+
+        <!-- STEP SELECTOR PILLS -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
+          <div id="step-pill-1" onclick="setStep(1)" class="cursor-pointer p-3 rounded-xl border border-blue-500/60 bg-blue-950/40 text-left transition">
+            <div class="text-[10px] font-bold text-blue-400 uppercase">Phase 1</div>
+            <div class="text-xs font-extrabold text-white">Global Init & Broadcast</div>
+          </div>
+          <div id="step-pill-2" onclick="setStep(2)" class="cursor-pointer p-3 rounded-xl border border-slate-700 bg-slate-900/60 text-left transition">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Phase 2</div>
+            <div class="text-xs font-extrabold text-white">On-Farm Local Training</div>
+          </div>
+          <div id="step-pill-3" onclick="setStep(3)" class="cursor-pointer p-3 rounded-xl border border-slate-700 bg-slate-900/60 text-left transition">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Phase 3</div>
+            <div class="text-xs font-extrabold text-white">Client Drift under Skew</div>
+          </div>
+          <div id="step-pill-4" onclick="setStep(4)" class="cursor-pointer p-3 rounded-xl border border-slate-700 bg-slate-900/60 text-left transition">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Phase 4</div>
+            <div class="text-xs font-extrabold text-white">FedProx Proximal Anchor</div>
+          </div>
+          <div id="step-pill-5" onclick="setStep(5)" class="cursor-pointer p-3 rounded-xl border border-slate-700 bg-slate-900/60 text-left transition">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Phase 5</div>
+            <div class="text-xs font-extrabold text-white">Weighted Aggregation</div>
+          </div>
+        </div>
+
+        <!-- DYNAMIC EXPLANATION BANNER -->
+        <div id="step-banner" class="p-4 rounded-xl bg-blue-950/40 border border-blue-500/30 text-blue-200 text-sm mb-6 flex items-center justify-between">
+          <div>
+            <strong id="banner-title" class="text-white text-base">Phase 1: Global Model Broadcast</strong>
+            <p id="banner-desc" class="text-xs text-blue-300 mt-1">The aggregation server initializes the global CNN backbone with ImageNet-pretrained weights and broadcasts weights $w_{global}^t$ to all 5 simulated farm edge devices.</p>
+          </div>
+          <span id="banner-badge" class="px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-400/40 rounded-full text-xs font-mono font-bold">Round Start</span>
+        </div>
+
+        <!-- INTERACTIVE SVG DIAGRAM CANVAS -->
+        <div class="relative bg-slate-950 rounded-2xl border border-slate-800 p-6 overflow-hidden">
+          <svg viewBox="0 0 1000 520" class="w-full h-auto" id="fl-svg">
+            <defs>
+              <linearGradient id="gradServer" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1e3a8a"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <linearGradient id="gradClient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1e293b"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+              <marker id="arrowDown" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6"/>
+              </marker>
+              <marker id="arrowUp" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981"/>
+              </marker>
+            </defs>
+
+            <!-- CONNECTING LINES (SERVER TO 5 CLIENTS) -->
+            <!-- Client 1 (X=100) -->
+            <line id="line-c1" x1="500" y1="110" x2="120" y2="330" stroke="#334155" stroke-width="2" stroke-dasharray="6"/>
+            <!-- Client 2 (X=300) -->
+            <line id="line-c2" x1="500" y1="110" x2="310" y2="330" stroke="#334155" stroke-width="2" stroke-dasharray="6"/>
+            <!-- Client 3 (X=500) -->
+            <line id="line-c3" x1="500" y1="110" x2="500" y2="330" stroke="#334155" stroke-width="2" stroke-dasharray="6"/>
+            <!-- Client 4 (X=700) -->
+            <line id="line-c4" x1="500" y1="110" x2="690" y2="330" stroke="#334155" stroke-width="2" stroke-dasharray="6"/>
+            <!-- Client 5 (X=900) -->
+            <line id="line-c5" x1="500" y1="110" x2="880" y2="330" stroke="#334155" stroke-width="2" stroke-dasharray="6"/>
+
+            <!-- CENTRAL AGGREGATION SERVER -->
+            <g transform="translate(375, 20)" id="node-server">
+              <rect width="250" height="90" rx="16" fill="url(#gradServer)" stroke="#3b82f6" stroke-width="2"/>
+              <text x="125" y="32" fill="#60a5fa" font-size="12" font-weight="bold" text-anchor="middle" letter-spacing="1">CENTRAL FL SERVER</text>
+              <text x="125" y="54" fill="#ffffff" font-size="15" font-weight="900" text-anchor="middle" id="server-model-label">Global Model (w_global)</text>
+              <text x="125" y="74" fill="#94a3b8" font-size="11" text-anchor="middle">Aggregation: FedAvg / FedProx</text>
+            </g>
+
+            <!-- CLIENT 1 -->
+            <g transform="translate(40, 330)" id="node-c1">
+              <rect width="160" height="150" rx="14" fill="url(#gradClient)" stroke="#475569" stroke-width="1.5" id="rect-c1"/>
+              <text x="80" y="24" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">Farm Client 1</text>
+              <text x="80" y="42" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" id="status-c1">Local w_1</text>
+              <!-- Data partition preview -->
+              <rect x="15" y="55" width="130" height="50" rx="8" fill="#0f172a" stroke="#334155"/>
+              <text x="80" y="74" fill="#cbd5e1" font-size="10" text-anchor="middle">Local Dataset n₁=7,602</text>
+              <text x="80" y="92" fill="#f87171" font-size="9" font-weight="bold" text-anchor="middle">Tomatoes (Early/Late)</text>
+              <!-- Drift Indicator -->
+              <circle cx="80" cy="125" r="10" fill="#334155" id="drift-c1"/>
+              <text x="80" y="129" fill="#94a3b8" font-size="9" text-anchor="middle" font-weight="bold" id="drift-txt-c1">Idle</text>
+            </g>
+
+            <!-- CLIENT 2 -->
+            <g transform="translate(230, 330)" id="node-c2">
+              <rect width="160" height="150" rx="14" fill="url(#gradClient)" stroke="#475569" stroke-width="1.5" id="rect-c2"/>
+              <text x="80" y="24" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">Farm Client 2</text>
+              <text x="80" y="42" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" id="status-c2">Local w_2</text>
+              <rect x="15" y="55" width="130" height="50" rx="8" fill="#0f172a" stroke="#334155"/>
+              <text x="80" y="74" fill="#cbd5e1" font-size="10" text-anchor="middle">Local Dataset n₂=7,603</text>
+              <text x="80" y="92" fill="#fbbf24" font-size="9" font-weight="bold" text-anchor="middle">Apple & Corn Rust</text>
+              <circle cx="80" cy="125" r="10" fill="#334155" id="drift-c2"/>
+              <text x="80" y="129" fill="#94a3b8" font-size="9" text-anchor="middle" font-weight="bold" id="drift-txt-c2">Idle</text>
+            </g>
+
+            <!-- CLIENT 3 -->
+            <g transform="translate(420, 330)" id="node-c3">
+              <rect width="160" height="150" rx="14" fill="url(#gradClient)" stroke="#475569" stroke-width="1.5" id="rect-c3"/>
+              <text x="80" y="24" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">Farm Client 3</text>
+              <text x="80" y="42" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" id="status-c3">Local w_3</text>
+              <rect x="15" y="55" width="130" height="50" rx="8" fill="#0f172a" stroke="#334155"/>
+              <text x="80" y="74" fill="#cbd5e1" font-size="10" text-anchor="middle">Local Dataset n₃=7,602</text>
+              <text x="80" y="92" fill="#34d399" font-size="9" font-weight="bold" text-anchor="middle">Potato Blight & Healthy</text>
+              <circle cx="80" cy="125" r="10" fill="#334155" id="drift-c3"/>
+              <text x="80" y="129" fill="#94a3b8" font-size="9" text-anchor="middle" font-weight="bold" id="drift-txt-c3">Idle</text>
+            </g>
+
+            <!-- CLIENT 4 -->
+            <g transform="translate(610, 330)" id="node-c4">
+              <rect width="160" height="150" rx="14" fill="url(#gradClient)" stroke="#475569" stroke-width="1.5" id="rect-c4"/>
+              <text x="80" y="24" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">Farm Client 4</text>
+              <text x="80" y="42" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" id="status-c4">Local w_4</text>
+              <rect x="15" y="55" width="130" height="50" rx="8" fill="#0f172a" stroke="#334155"/>
+              <text x="80" y="74" fill="#cbd5e1" font-size="10" text-anchor="middle">Local Dataset n₄=7,603</text>
+              <text x="80" y="92" fill="#a78bfa" font-size="9" font-weight="bold" text-anchor="middle">Pepper Bell & Grape</text>
+              <circle cx="80" cy="125" r="10" fill="#334155" id="drift-c4"/>
+              <text x="80" y="129" fill="#94a3b8" font-size="9" text-anchor="middle" font-weight="bold" id="drift-txt-c4">Idle</text>
+            </g>
+
+            <!-- CLIENT 5 -->
+            <g transform="translate(800, 330)" id="node-c5">
+              <rect width="160" height="150" rx="14" fill="url(#gradClient)" stroke="#475569" stroke-width="1.5" id="rect-c5"/>
+              <text x="80" y="24" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">Farm Client 5</text>
+              <text x="80" y="42" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" id="status-c5">Local w_5</text>
+              <rect x="15" y="55" width="130" height="50" rx="8" fill="#0f172a" stroke="#334155"/>
+              <text x="80" y="74" fill="#cbd5e1" font-size="10" text-anchor="middle">Local Dataset n₅=7,603</text>
+              <text x="80" y="92" fill="#f472b6" font-size="9" font-weight="bold" text-anchor="middle">Orange, Peach & Cherry</text>
+              <circle cx="80" cy="125" r="10" fill="#334155" id="drift-c5"/>
+              <text x="80" y="129" fill="#94a3b8" font-size="9" text-anchor="middle" font-weight="bold" id="drift-txt-c5">Idle</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================================= -->
+    <!-- TAB 2: CLIENT DRIFT & FEDPROX ANCHOR -->
+    <!-- ========================================================================================= -->
+    <section id="tab-drift-explainer" class="tab-content hidden space-y-6">
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-xl font-black text-white mb-2 flex items-center gap-2">
+          <span>⚖️</span> Understanding Client Drift & The FedProx Proximal Anchor
+        </h2>
+        <p class="text-sm text-slate-400 mb-6">
+          Why does standard FedAvg fail under severe Non-IID data, and how does the proximal term solve this?
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- FedAvg Failure Card -->
+          <div class="p-5 rounded-xl bg-rose-950/20 border border-rose-500/40">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-extrabold text-rose-400">1. FedAvg Failure Mode: Client Drift</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300">Divergence</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              When Client 1 only has <em>Tomatoes</em> and Client 2 only has <em>Apples</em>:
+            </p>
+            <div class="my-3 p-3 bg-slate-900 rounded-lg text-xs font-mono text-rose-300 border border-rose-900/50">
+              Loss = L_CE(w)
+            </div>
+            <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+              <li>Client 1 optimizes weights to classify tomatoes, forgetting apple representations.</li>
+              <li>Client 2 optimizes weights in the opposite direction.</li>
+              <li>When the server averages these conflicting weights ($w_{avg} = \frac{w_1 + w_2}{2}$), the feature representations cancel out.</li>
+              <li><strong>Result in our experiments</strong>: ResNet50 worst-client accuracy collapsed to <strong class="text-rose-400">31.76%</strong>!</li>
+            </ul>
+          </div>
+
+          <!-- FedProx Solution Card -->
+          <div class="p-5 rounded-xl bg-emerald-950/20 border border-emerald-500/40">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-extrabold text-emerald-400">2. FedProx Solution: Proximal Regularization</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">Constrained Consensus</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              FedProx attaches an elastic mathematical anchor to each client's local loss:
+            </p>
+            <div class="my-3 p-3 bg-slate-900 rounded-lg text-xs font-mono text-emerald-300 border border-emerald-900/50">
+              Loss = L_CE(w) + (μ / 2) * ||w - w_global||²
+            </div>
+            <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+              <li>Clients still learn from their local crop images.</li>
+              <li>However, if local weights drift too far from $w_{global}$, the quadratic penalty explodes.</li>
+              <li>This restricts all clients to a shared parameter subspace.</li>
+              <li><strong>Result in our experiments</strong>: ResNet50 worst-client accuracy jumped to <strong class="text-emerald-400">81.59% (+49.8% gain)</strong>!</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- MATHEMATICAL ANCHOR SLIDER INTERACTION -->
+        <div class="mt-6 p-5 bg-slate-900 rounded-xl border border-slate-700">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-3">
+            <div>
+              <span class="text-sm font-bold text-white">Interactive μ (Proximal Coefficient) Slider:</span>
+              <span class="text-xs text-slate-400 ml-2">Observe how μ affects convergence and drift</span>
+            </div>
+            <div class="font-mono text-sm font-bold text-blue-400" id="mu-val-label">μ = 0.01 (Optimal Sweet Spot)</div>
+          </div>
+          <input type="range" min="0" max="2" step="1" value="1" id="mu-slider" oninput="updateMu(this.value)" class="w-full accent-blue-500 cursor-pointer">
+          <div class="flex justify-between text-[11px] text-slate-400 mt-2 font-mono">
+            <span>μ = 0.001 (Under-constrained, mild drift)</span>
+            <span class="text-emerald-400 font-bold">μ = 0.01 (Optimal: Best F1 & Stability)</span>
+            <span>μ = 0.1 (Over-constrained, slow learning)</span>
+          </div>
+          <div class="mt-3 p-3 bg-slate-950 rounded border border-slate-800 text-xs text-slate-300" id="mu-explanation">
+            <strong>Empirical Evidence:</strong> In our MobileNetV3 sweep under severe Non-IID ($\alpha=0.1$), $\mu=0.01$ achieved the highest Macro-F1 (<strong>95.36%</strong>) and best client consistency (worst client 90.85%, std 0.0335).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================================= -->
+    <!-- TAB 3: NON-IID DIRICHLET SIMULATOR -->
+    <!-- ========================================================================================= -->
+    <section id="tab-noniid-skew" class="tab-content hidden space-y-6">
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-xl font-black text-white mb-2 flex items-center gap-2">
+          <span>🌾</span> Dirichlet Label Distribution Skew Simulator
+        </h2>
+        <p class="text-sm text-slate-400 mb-6">
+          See how changing the Dirichlet parameter $\alpha$ shifts the sample distribution across the 5 virtual clients.
+        </p>
+
+        <!-- ALPHA TOGGLE BUTTONS -->
+        <div class="flex flex-wrap gap-3 mb-6">
+          <button onclick="setAlpha(10.0)" id="btn-a10" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold transition">α = 10.0 (Near-IID)</button>
+          <button onclick="setAlpha(1.0)" id="btn-a1" class="px-4 py-2 rounded-xl bg-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-600 transition">α = 1.0 (Moderate Skew)</button>
+          <button onclick="setAlpha(0.5)" id="btn-a05" class="px-4 py-2 rounded-xl bg-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-600 transition">α = 0.5 (Strong Skew)</button>
+          <button onclick="setAlpha(0.1)" id="btn-a01" class="px-4 py-2 rounded-xl bg-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-600 transition">α = 0.1 (Severe Non-IID)</button>
+        </div>
+
+        <!-- SIMULATED CLIENT BARS -->
+        <div class="space-y-4 bg-slate-950 p-6 rounded-xl border border-slate-800" id="dirichlet-bars">
+          <!-- Client 1 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-300">Farm Client 1 (Tomato & Potato Specialist)</span>
+              <span class="text-emerald-400 font-mono" id="c1-dist-txt">All 38 classes evenly represented</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-3.5 flex overflow-hidden" id="bar-c1">
+              <div class="bg-blue-500 h-full" style="width: 20%"></div>
+              <div class="bg-emerald-500 h-full" style="width: 20%"></div>
+              <div class="bg-amber-500 h-full" style="width: 20%"></div>
+              <div class="bg-purple-500 h-full" style="width: 20%"></div>
+              <div class="bg-rose-500 h-full" style="width: 20%"></div>
+            </div>
+          </div>
+
+          <!-- Client 2 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-300">Farm Client 2 (Corn & Apple Specialist)</span>
+              <span class="text-emerald-400 font-mono" id="c2-dist-txt">All 38 classes evenly represented</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-3.5 flex overflow-hidden" id="bar-c2">
+              <div class="bg-blue-500 h-full" style="width: 20%"></div>
+              <div class="bg-emerald-500 h-full" style="width: 20%"></div>
+              <div class="bg-amber-500 h-full" style="width: 20%"></div>
+              <div class="bg-purple-500 h-full" style="width: 20%"></div>
+              <div class="bg-rose-500 h-full" style="width: 20%"></div>
+            </div>
+          </div>
+
+          <!-- Client 3 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-300">Farm Client 3 (Pepper & Grape Specialist)</span>
+              <span class="text-emerald-400 font-mono" id="c3-dist-txt">All 38 classes evenly represented</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-3.5 flex overflow-hidden" id="bar-c3">
+              <div class="bg-blue-500 h-full" style="width: 20%"></div>
+              <div class="bg-emerald-500 h-full" style="width: 20%"></div>
+              <div class="bg-amber-500 h-full" style="width: 20%"></div>
+              <div class="bg-purple-500 h-full" style="width: 20%"></div>
+              <div class="bg-rose-500 h-full" style="width: 20%"></div>
+            </div>
+          </div>
+
+          <!-- Client 4 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-300">Farm Client 4 (Soybean & Squash Specialist)</span>
+              <span class="text-emerald-400 font-mono" id="c4-dist-txt">All 38 classes evenly represented</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-3.5 flex overflow-hidden" id="bar-c4">
+              <div class="bg-blue-500 h-full" style="width: 20%"></div>
+              <div class="bg-emerald-500 h-full" style="width: 20%"></div>
+              <div class="bg-amber-500 h-full" style="width: 20%"></div>
+              <div class="bg-purple-500 h-full" style="width: 20%"></div>
+              <div class="bg-rose-500 h-full" style="width: 20%"></div>
+            </div>
+          </div>
+
+          <!-- Client 5 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-300">Farm Client 5 (Peach & Cherry Specialist)</span>
+              <span class="text-emerald-400 font-mono" id="c5-dist-txt">All 38 classes evenly represented</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-3.5 flex overflow-hidden" id="bar-c5">
+              <div class="bg-blue-500 h-full" style="width: 20%"></div>
+              <div class="bg-emerald-500 h-full" style="width: 20%"></div>
+              <div class="bg-amber-500 h-full" style="width: 20%"></div>
+              <div class="bg-purple-500 h-full" style="width: 20%"></div>
+              <div class="bg-rose-500 h-full" style="width: 20%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IMPACT CALLOUT -->
+        <div class="p-4 rounded-xl bg-blue-950/30 border border-blue-800/40 text-xs text-blue-200" id="alpha-impact-desc">
+          <strong>At α = 10.0:</strong> Clients receive balanced samples from virtually all 38 classes. FedAvg converges smoothly to <strong>99.68% F1</strong>, with client standard deviation of only 0.0006.
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================================= -->
+    <!-- TAB 4: 4-BACKBONE RESULTS & TABLES -->
+    <!-- ========================================================================================= -->
+    <section id="tab-model-comparison" class="tab-content hidden space-y-6">
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-xl font-black text-white mb-2">Experimental Results Across All 4 CNN Backbones</h2>
+        <p class="text-sm text-slate-400 mb-6">
+          Comprehensive comparison showing Centralized Baseline vs FedAvg vs FedProx under Severe Non-IID ($\alpha=0.1$).
+        </p>
+
+        <!-- TABLE 5 COMPLETE COMPILED DATA -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm border border-slate-700 rounded-xl overflow-hidden">
+            <thead class="bg-slate-950 text-slate-300 font-bold uppercase text-[11px] tracking-wider">
+              <tr>
+                <th class="p-3">Model Backbone</th>
+                <th class="p-3">Params</th>
+                <th class="p-3">Centralized F1</th>
+                <th class="p-3 text-rose-400">FedAvg F1 (α=0.1)</th>
+                <th class="p-3 text-emerald-400">FedProx F1 (μ=0.01)</th>
+                <th class="p-3">FedProx Gain</th>
+                <th class="p-3">Worst Client (FedAvg)</th>
+                <th class="p-3">Worst Client (FedProx)</th>
+                <th class="p-3">Worst Client Gain</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-300 bg-slate-900/60">
+              <!-- ResNet50 -->
+              <tr class="bg-rose-950/20 hover:bg-rose-950/30">
+                <td class="p-3 font-bold text-white flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> ResNet50
+                </td>
+                <td class="p-3 font-mono">23.6 M</td>
+                <td class="p-3 font-mono">99.67%</td>
+                <td class="p-3 font-mono font-bold text-rose-400">77.05%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">96.06%</td>
+                <td class="p-3 font-mono font-extrabold text-emerald-400">+19.01%</td>
+                <td class="p-3 font-mono text-rose-400 font-bold">31.76%</td>
+                <td class="p-3 font-mono text-emerald-400 font-bold">81.59%</td>
+                <td class="p-3 font-mono font-extrabold text-emerald-400">+49.83%</td>
+              </tr>
+              <!-- EfficientNet-B0 -->
+              <tr class="hover:bg-slate-800/50">
+                <td class="p-3 font-bold text-white flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span> EfficientNet-B0
+                </td>
+                <td class="p-3 font-mono">4.1 M</td>
+                <td class="p-3 font-mono">99.71%</td>
+                <td class="p-3 font-mono text-amber-400 font-bold">87.16%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">96.73%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">+9.57%</td>
+                <td class="p-3 font-mono text-amber-400 font-bold">63.26%</td>
+                <td class="p-3 font-mono text-emerald-400 font-bold">91.44%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">+28.18%</td>
+              </tr>
+              <!-- ConvNeXt-Tiny -->
+              <tr class="hover:bg-slate-800/50">
+                <td class="p-3 font-bold text-white flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span> ConvNeXt-Tiny
+                </td>
+                <td class="p-3 font-mono">27.9 M</td>
+                <td class="p-3 font-mono">99.59%</td>
+                <td class="p-3 font-mono text-amber-400 font-bold">88.63%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">95.20%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">+6.57%</td>
+                <td class="p-3 font-mono text-slate-300">78.15%</td>
+                <td class="p-3 font-mono text-emerald-400 font-bold">91.67%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">+13.52%</td>
+              </tr>
+              <!-- MobileNetV3 -->
+              <tr class="bg-emerald-950/20 hover:bg-emerald-950/30">
+                <td class="p-3 font-bold text-white flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> MobileNetV3-Small
+                </td>
+                <td class="p-3 font-mono">1.6 M</td>
+                <td class="p-3 font-mono">99.53%</td>
+                <td class="p-3 font-mono text-blue-400 font-bold">92.98%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">95.36%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">+2.38%</td>
+                <td class="p-3 font-mono text-blue-400 font-bold">84.16%</td>
+                <td class="p-3 font-mono text-emerald-400 font-bold">90.85%</td>
+                <td class="p-3 font-mono font-bold text-emerald-400">+6.69%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300">
+          <strong>Review Presentation Insight:</strong> All models achieved >99.5% in centralized training. The performance collapse in FedAvg is strictly caused by client drift under Non-IID label skew. FedProx successfully rescues all 4 models to >95% Macro-F1.
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================================= -->
+    <!-- TAB 5: COMMUNICATION TRADE-OFF -->
+    <!-- ========================================================================================= -->
+    <section id="tab-bandwidth-calc" class="tab-content hidden space-y-6">
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-xl font-black text-white mb-2 flex items-center gap-2">
+          <span>📡</span> Communication Cost vs. Performance Trade-off (Table 6)
+        </h2>
+        <p class="text-sm text-slate-400 mb-6">
+          In rural agricultural IoT, edge devices cannot afford gigabytes of weight synchronization per round.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div class="p-5 bg-emerald-950/30 border-2 border-emerald-500/60 rounded-2xl">
+            <div class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Most Practical Edge Model</div>
+            <div class="text-xl font-black text-white mt-1">MobileNetV3</div>
+            <div class="text-3xl font-black text-emerald-400 my-2 font-mono">1.19 GB</div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <div>Model Size: <strong>5.94 MB</strong></div>
+              <div>Single Latency: <strong>3.40 ms</strong></div>
+              <div>FLOPs: <strong>0.12 GFLOPs</strong></div>
+              <div>FedProx F1: <strong>95.36%</strong></div>
+            </div>
+            <div class="mt-4 text-xs font-bold text-emerald-300 bg-emerald-900/40 p-2 rounded text-center">
+              ✓ 94.4% Less Bandwidth
+            </div>
+          </div>
+
+          <div class="p-5 bg-indigo-950/30 border border-indigo-500/40 rounded-2xl">
+            <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Highest Accuracy Balance</div>
+            <div class="text-xl font-black text-white mt-1">EfficientNet-B0</div>
+            <div class="text-3xl font-black text-indigo-400 my-2 font-mono">3.09 GB</div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <div>Model Size: <strong>15.47 MB</strong></div>
+              <div>Single Latency: <strong>6.93 ms</strong></div>
+              <div>FLOPs: <strong>0.82 GFLOPs</strong></div>
+              <div>FedProx F1: <strong>96.73%</strong> (Highest)</div>
+            </div>
+            <div class="mt-4 text-xs font-bold text-indigo-300 bg-indigo-900/40 p-2 rounded text-center">
+              ✓ Top Classification F1
+            </div>
+          </div>
+
+          <div class="p-5 bg-slate-900 border border-slate-700 rounded-2xl">
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Heavyweight Baseline</div>
+            <div class="text-xl font-black text-white mt-1">ResNet50</div>
+            <div class="text-3xl font-black text-slate-300 my-2 font-mono">17.99 GB</div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <div>Model Size: <strong>89.97 MB</strong></div>
+              <div>Single Latency: <strong>5.89 ms</strong></div>
+              <div>FLOPs: <strong>8.26 GFLOPs</strong></div>
+              <div>FedProx F1: <strong>96.06%</strong></div>
+            </div>
+            <div class="mt-4 text-xs text-slate-400 bg-slate-800 p-2 rounded text-center">
+              15× Bandwidth Overhead
+            </div>
+          </div>
+
+          <div class="p-5 bg-rose-950/30 border border-rose-500/40 rounded-2xl">
+            <div class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Impractical Edge Model</div>
+            <div class="text-xl font-black text-white mt-1">ConvNeXt-Tiny</div>
+            <div class="text-3xl font-black text-rose-400 my-2 font-mono">21.25 GB</div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <div>Model Size: <strong>106.24 MB</strong></div>
+              <div>Single Latency: <strong>4.12 ms</strong></div>
+              <div>FLOPs: <strong>8.98 GFLOPs</strong></div>
+              <div>FedProx F1: <strong>95.20%</strong></div>
+            </div>
+            <div class="mt-4 text-xs text-rose-300 bg-rose-900/40 p-2 rounded text-center">
+              18× Bandwidth for same F1
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================================= -->
+    <!-- TAB 6: REVIEWER Q&A DEFENSE -->
+    <!-- ========================================================================================= -->
+    <section id="tab-defense-qa" class="tab-content hidden space-y-4">
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl mb-4">
+        <h2 class="text-xl font-black text-white mb-1">Defense Cheat Sheet: Top 5 Tough Reviewer Questions</h2>
+        <p class="text-sm text-slate-400">Click any card below to reveal the exact scientific argument to speak to your reviewers.</p>
+      </div>
+
+      <!-- Q1 -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-xl overflow-hidden shadow-lg">
+        <button onclick="toggleCard('def-1')" class="w-full p-4 text-left font-bold text-white flex justify-between items-center hover:bg-slate-700/50">
+          <span class="text-sm sm:text-base">Q1: Why did ResNet50 degrade so badly (down to 31.8% on worst client) under FedAvg?</span>
+          <span class="text-blue-400 text-xl font-mono">+</span>
+        </button>
+        <div id="def-1" class="p-5 bg-slate-900 text-slate-300 text-xs sm:text-sm border-t border-slate-700 hidden leading-relaxed space-y-2">
+          <p><strong>Direct Answer:</strong> ResNet50 has 23.59M parameters and deep residual blocks. When a client trains locally on a severely skewed class partition ($\alpha=0.1$), its larger representation capacity allows it to quickly overfit to that specific subset. As a consequence, the weights of different clients diverge drastically in parameter space (client drift).</p>
+          <p>When the server performs simple weighted averaging, these diverged weights destructively interfere with each other, destroying feature representations for missing classes. MobileNetV3 (1.56M parameters) has strict parameter constraints and depthwise convolutions that limit local over-specialization.</p>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-xl overflow-hidden shadow-lg">
+        <button onclick="toggleCard('def-2')" class="w-full p-4 text-left font-bold text-white flex justify-between items-center hover:bg-slate-700/50">
+          <span class="text-sm sm:text-base">Q2: How exactly does FedProx prevent this client drift mathematically?</span>
+          <span class="text-blue-400 text-xl font-mono">+</span>
+        </button>
+        <div id="def-2" class="p-5 bg-slate-900 text-slate-300 text-xs sm:text-sm border-t border-slate-700 hidden leading-relaxed space-y-2">
+          <p><strong>Direct Answer:</strong> FedProx adds a proximal penalty term directly to the client's local loss:</p>
+          <div class="p-3 bg-slate-950 font-mono text-xs text-emerald-400 rounded border border-slate-800">
+            Loss = L_CE(w) + (μ / 2) * ||w - w_global||²
+          </div>
+          <p>This proximal term acts as an elastic anchor. As local client weights $w$ move away from the global weights $w_{global}$, the penalty increases quadratically. This restricts clients to exploring within a bounded neighborhood around the global consensus. Setting $\mu=0.01$ prevented ResNet50 from diverging, restoring worst-client accuracy by +49.8%.</p>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-xl overflow-hidden shadow-lg">
+        <button onclick="toggleCard('def-3')" class="w-full p-4 text-left font-bold text-white flex justify-between items-center hover:bg-slate-700/50">
+          <span class="text-sm sm:text-base">Q3: How did you ensure experimental fairness across all four architectures?</span>
+          <span class="text-blue-400 text-xl font-mono">+</span>
+        </button>
+        <div id="def-3" class="p-5 bg-slate-900 text-slate-300 text-xs sm:text-sm border-t border-slate-700 hidden leading-relaxed space-y-2">
+          <p><strong>Direct Answer:</strong> We enforced strict scientific controls:</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li><strong>Identical Client Partitions:</strong> Partition index mappings for each $\alpha$ were generated once using <code>seed=42</code> and saved to static JSON files (e.g. <code>partition_alpha_0.1_seed42.json</code>). All 4 models loaded the exact same sample assignments.</li>
+            <li><strong>Strict Test Isolation:</strong> 15% of the dataset (8,146 images) was sequestered into an isolated test split and never used in client partitioning, local training, or hyperparameter selection.</li>
+            <li><strong>Zero Client Overlap:</strong> Each training sample was assigned to exactly one client.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-xl overflow-hidden shadow-lg">
+        <button onclick="toggleCard('def-4')" class="w-full p-4 text-left font-bold text-white flex justify-between items-center hover:bg-slate-700/50">
+          <span class="text-sm sm:text-base">Q4: Why not just use ConvNeXt-Tiny since it is the most modern CNN?</span>
+          <span class="text-blue-400 text-xl font-mono">+</span>
+        </button>
+        <div id="def-4" class="p-5 bg-slate-900 text-slate-300 text-xs sm:text-sm border-t border-slate-700 hidden leading-relaxed space-y-2">
+          <p><strong>Direct Answer:</strong> In real agricultural edge networks, communication overhead is the primary bottleneck. ConvNeXt-Tiny required <strong>21.25 GB</strong> of cumulative communication across 20 rounds for a 95.20% FedProx Macro-F1. MobileNetV3 achieved <strong>95.36%</strong> Macro-F1 while transmitting only <strong>1.19 GB</strong> (an 18-fold bandwidth reduction).</p>
+          <p>Transmitting 21 GB per farm over rural 4G/IoT networks is economically and practically unfeasible, making MobileNetV3 the vastly superior operational architecture.</p>
+        </div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-xl overflow-hidden shadow-lg">
+        <button onclick="toggleCard('def-5')" class="w-full p-4 text-left font-bold text-white flex justify-between items-center hover:bg-slate-700/50">
+          <span class="text-sm sm:text-base">Q5: Do you claim formal differential privacy or encryption?</span>
+          <span class="text-blue-400 text-xl font-mono">+</span>
+        </button>
+        <div id="def-5" class="p-5 bg-slate-900 text-slate-300 text-xs sm:text-sm border-t border-slate-700 hidden leading-relaxed space-y-2">
+          <p><strong>Direct Answer:</strong> No. We explicitly state in our documentation that raw image privacy is maintained by keeping raw photos local to client dataloaders during federated simulation. Formal cryptographic guarantees (Secure Aggregation) and Differential Privacy (DP-SGD) are outside the scope of this one-week comparative architecture study and are documented as future work.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-xs text-slate-500 py-6 border-t border-slate-800 bg-slate-950">
+    FedAgri-Robust Review Presentation Dashboard • Compiled from Live Experimental Runs on RTX 4060 Ti
+  </footer>
+
+  <!-- ========================================================================================= -->
+  <!-- JAVASCRIPT LOGIC -->
+  <!-- ========================================================================================= -->
+  <script>
+    // Tab Switching Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+      const activeTab = document.getElementById(tabId);
+      if (activeTab) activeTab.classList.remove('hidden');
+
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) clickedBtn.classList.add('active');
+    }
+
+    // Interactive Architecture Animation Steps
+    let currentStep = 1;
+    const stepData = [
+      {
+        title: "Phase 1: Global Model Broadcast",
+        desc: "The Central Server initializes the global CNN model (ImageNet-pretrained weights w_global) and broadcasts the parameter tensors to all 5 edge farm clients.",
+        badge: "Broadcast Phase",
+        serverColor: "#3b82f6",
+        linesColor: "#3b82f6",
+        clientStatus: "Received w_global",
+        driftStatus: "Synchronized",
+        driftColor: "#3b82f6"
+      },
+      {
+        title: "Phase 2: Private On-Farm Training",
+        desc: "Each client trains the CNN locally for 1 epoch on its private dataset. Raw images never leave the farm. Gradients are computed locally.",
+        badge: "Local Training",
+        serverColor: "#334155",
+        linesColor: "#334155",
+        clientStatus: "Training on Local Data...",
+        driftStatus: "Computing ∇L",
+        driftColor: "#eab308"
+      },
+      {
+        title: "Phase 3: The Client Drift Dilemma under Severe Non-IID (α = 0.1)",
+        desc: "Because Farm 1 has only Tomatoes and Farm 2 has only Apples, their local weights w_k drift in opposite directions in parameter space! Deep models like ResNet50 diverge severely.",
+        badge: "Divergence Warning",
+        serverColor: "#334155",
+        linesColor: "#ef4444",
+        clientStatus: "Overfitting Local Skew!",
+        driftStatus: "Drifting Away!",
+        driftColor: "#ef4444"
+      },
+      {
+        title: "Phase 4: FedProx Proximal Regularization (The Solution)",
+        desc: "FedProx attaches a quadratic penalty (μ/2)||w - w_global||² to each client's loss. This acts as a mathematical tether, preventing local models from drifting away from consensus.",
+        badge: "Proximal Anchor Active",
+        serverColor: "#10b981",
+        linesColor: "#10b981",
+        clientStatus: "Anchored to Consensus",
+        driftStatus: "Tethered (μ=0.01)",
+        driftColor: "#10b981"
+      },
+      {
+        title: "Phase 5: Sample-Weighted Server Aggregation",
+        desc: "Clients upload their regularized parameters w_k. The server computes w_global = Σ(n_k/N)w_k, completing the communication round. Accuracy jumps to >95%!",
+        badge: "Aggregation Complete",
+        serverColor: "#10b981",
+        linesColor: "#10b981",
+        clientStatus: "Uploaded w_k",
+        driftStatus: "Consensus Reached",
+        driftColor: "#10b981"
+      }
+    ];
+
+    function setStep(step) {
+      currentStep = step;
+      const data = stepData[step - 1];
+
+      // Update pills
+      for (let i = 1; i <= 5; i++) {
+        const pill = document.getElementById(`step-pill-${i}`);
+        if (i === step) {
+          pill.className = "cursor-pointer p-3 rounded-xl border border-blue-500/80 bg-blue-950/60 text-left transition shadow-md shadow-blue-500/20";
+        } else {
+          pill.className = "cursor-pointer p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-left transition";
+        }
+      }
+
+      // Update Banner
+      document.getElementById('banner-title').innerText = data.title;
+      document.getElementById('banner-desc').innerText = data.desc;
+      document.getElementById('banner-badge').innerText = data.badge;
+
+      // Update Lines
+      for (let i = 1; i <= 5; i++) {
+        const line = document.getElementById(`line-c${i}`);
+        line.setAttribute('stroke', data.linesColor);
+        if (step === 1 || step === 5) {
+          line.classList.add('flow-line');
+        } else {
+          line.classList.remove('flow-line');
+        }
+
+        // Update Client status text & drift circles
+        document.getElementById(`status-c${i}`).innerText = data.clientStatus;
+        document.getElementById(`drift-c${i}`).setAttribute('fill', data.driftColor);
+        document.getElementById(`drift-txt-c${i}`).innerText = data.driftStatus;
+      }
+    }
+
+    function nextStep() {
+      currentStep = (currentStep % 5) + 1;
+      setStep(currentStep);
+    }
+
+    function prevStep() {
+      currentStep = currentStep === 1 ? 5 : currentStep - 1;
+      setStep(currentStep);
+    }
+
+    function resetArch() {
+      setStep(1);
+    }
+
+    // Toggle Accordion in Defense Q&A
+    function toggleCard(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.toggle('hidden');
+      }
+    }
+
+    // Dirichlet Interactive Simulator
+    function setAlpha(alpha) {
+      const buttons = [
+        { id: 'btn-a10', val: 10.0 },
+        { id: 'btn-a1', val: 1.0 },
+        { id: 'btn-a05', val: 0.5 },
+        { id: 'btn-a01', val: 0.1 }
+      ];
+      buttons.forEach(b => {
+        const el = document.getElementById(b.id);
+        if (b.val === alpha) {
+          el.className = "px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold transition shadow-lg shadow-blue-600/30";
+        } else {
+          el.className = "px-4 py-2 rounded-xl bg-slate-700 text-slate-300 text-xs font-bold hover:bg-slate-600 transition";
+        }
+      });
+
+      const descEl = document.getElementById('alpha-impact-desc');
+      if (alpha === 10.0) {
+        descEl.innerHTML = "<strong>At α = 10.0 (Near-IID):</strong> Clients receive balanced samples across all 38 classes. FedAvg converges smoothly to <strong>99.68% F1</strong>, and client accuracy standard deviation is negligible (0.0006).";
+        setBars([20, 20, 20, 20, 20], "All 38 classes evenly represented (~7,600 samples)");
+      } else if (alpha === 1.0) {
+        descEl.innerHTML = "<strong>At α = 1.0 (Moderate Skew):</strong> Noticeable regional differences appear. MobileNetV3 FedAvg reaches <strong>99.42% F1</strong>, but client drift begins to subtly emerge.";
+        setBars([35, 25, 20, 10, 10], "Moderate imbalance across crop types");
+      } else if (alpha === 0.5) {
+        descEl.innerHTML = "<strong>At α = 0.5 (Strong Skew):</strong> Several clients hold very few samples of specific diseases. MobileNetV3 reaches <strong>99.21% F1</strong>, but client consistency variance begins to widen.";
+        setBars([55, 25, 10, 5, 5], "Strong specialization in 2-3 crops");
+      } else if (alpha === 0.1) {
+        descEl.innerHTML = "<strong>At α = 0.1 (Severe Non-IID):</strong> Extreme monoculture skew! Each farm client holds mostly 1-2 crops. <strong>FedAvg collapses on ResNet50 (77.05% F1, worst client 31.76%)</strong>. FedProx restores performance to <strong>96.06% F1</strong>!";
+        setBars([85, 10, 3, 1, 1], "Severe skew: 85% of samples concentrated in 1-2 classes!");
+      }
+    }
+
+    function setBars(widths, text) {
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById(`c${i}-dist-txt`).innerText = text;
+        const bar = document.getElementById(`bar-c${i}`);
+        bar.children[0].style.width = widths[0] + "%";
+        bar.children[1].style.width = widths[1] + "%";
+        bar.children[2].style.width = widths[2] + "%";
+        bar.children[3].style.width = widths[3] + "%";
+        bar.children[4].style.width = widths[4] + "%";
+      }
+    }
+
+    // Update Mu interaction
+    function updateMu(val) {
+      const label = document.getElementById('mu-val-label');
+      const desc = document.getElementById('mu-explanation');
+      if (val == 0) {
+        label.innerText = "μ = 0.001 (Weak Anchor)";
+        label.className = "font-mono text-sm font-bold text-amber-400";
+        desc.innerHTML = "<strong>At μ = 0.001:</strong> The proximal anchor is too loose. Models experience mild drift under severe non-IID skew. (MobileNetV3 achieved 95.23% F1).";
+      } else if (val == 1) {
+        label.innerText = "μ = 0.01 (Optimal Sweet Spot)";
+        label.className = "font-mono text-sm font-bold text-emerald-400";
+        desc.innerHTML = "<strong>At μ = 0.01:</strong> Optimal balance between local learning and consensus regularization. Achieved top Macro-F1 (<strong>95.36% on MobileNetV3</strong>, <strong>96.73% on EfficientNet-B0</strong>, and rescued ResNet50 to <strong>96.06%</strong>).";
+      } else {
+        label.innerText = "μ = 0.1 (Over-Constrained Anchor)";
+        label.className = "font-mono text-sm font-bold text-rose-400";
+        desc.innerHTML = "<strong>At μ = 0.1:</strong> The proximal penalty is overly rigid, restricting clients from adapting to their local training data, leading to slightly lower Macro-F1 (94.62%).";
+      }
+    }
+
+    // Initialize first step
+    setStep(1);
+  </script>
+</body>
+</html>

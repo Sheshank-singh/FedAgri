@@ -1,0 +1,44 @@
+seed: 42
+
+dataset:
+  name: "plantvillage"
+  raw_dir: "data/raw/PlantVillage-Dataset"
+  processed_dir: "data/processed"
+  num_classes: 38
+  image_size: 224
+  train_split: 0.70
+  val_split: 0.15
+  test_split: 0.15
+  selected_classes: "all"
+
+models:
+  - "mobilenetv3"
+  - "resnet50"
+  - "efficientnet_b0"
+  - "convnext_tiny"
+
+training:
+  batch_size: 64
+  num_workers: 2
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  centralized_epochs: 5
+  quick_epochs: 2
+
+
+federated:
+  num_clients: 5
+  num_rounds: 20
+  local_epochs: 1
+  batch_size: 32
+  client_lr: 0.001
+  quick_clients: 3
+  quick_rounds: 3
+
+noniid:
+  alphas: [10.0, 1.0, 0.5, 0.1]
+  default_alpha: 0.1
+
+fedprox:
+  mu_candidates: [0.001, 0.01, 0.1]
+  default_mu: 0.01
