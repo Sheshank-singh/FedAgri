@@ -239,17 +239,95 @@ async def get_partition_distribution(alpha: Optional[float] = Query(0.1), is_iid
 
 @app.get("/api/experiments")
 async def list_experiments():
-    """Lists all completed experiments with key metrics, times, and communication stats."""
-    log_files = sorted(glob.glob("results/logs/*_rounds.csv"))
+    """Lists all completed experiments from isolated run folders and research baselines."""
     experiments = []
+    seen_ids = set()
 
+    # 1. First, discover from isolated timestamped run directories (results/runs/)
+    runs_dir = "results/runs"
+    if os.path.exists(runs_dir):
+        folders = [f for f in os.listdir(runs_dir) if os.path.isdir(os.path.join(runs_dir, f))]
+        folders.sort(reverse=True)
+        for folder in folders:
+            folder_path = os.path.join(runs_dir, folder)
+            rounds_path = os.path.join(folder_path, "rounds.csv")
+            summary_path = os.path.join(folder_path, "summary.json")
+            config_path = os.path.join(folder_path, "config.json")
+            ckpt_path = os.path.join(folder_path, "checkpoint.pt")
+
+            if not os.path.exists(rounds_path) and not os.path.exists(summary_path):
+                continue
+
+            summary_data = {}
+            if os.path.exists(summary_path):
+                try:
+                    with open(summary_path, "r", encoding="utf-8") as f:
+                        summary_data = json.load(f)
+                except Exception:
+                    pass
+
+            config_data = {}
+            if os.path.exists(config_path):
+                try:
+                    with open(config_path, "r", encoding="utf-8") as f:
+                        config_data = json.load(f)
+                except Exception:
+                    pass
+
+            df = None
+            if os.path.exists(rounds_path):
+                try:
+                    df = pd.read_csv(rounds_path)
+                except Exception:
+                    pass
+
+            rounds_completed = len(df) if df is not None else summary_data.get("completed_rounds", 0)
+            best_val_f1 = float(df["validation_macro_f1"].max()) if df is not None and "validation_macro_f1" in df else summary_data.get("test_macro_f1", 0.0)
+            best_val_acc = float(df["validation_accuracy"].max()) if df is not None and "validation_accuracy" in df else summary_data.get("test_accuracy", 0.0)
+            total_time = float(df["round_time_s"].sum()) if df is not None and "round_time_s" in df else summary_data.get("training_time_s", 0.0)
+
+            model = config_data.get("model", summary_data.get("model", "unknown"))
+            algo = config_data.get("algorithm", summary_data.get("algorithm", "fedavg")).upper()
+            alpha_val = config_data.get("alpha", summary_data.get("alpha", -1.0))
+            alpha_str = "IID" if float(alpha_val) < 0 else str(alpha_val)
+            mu_val = float(config_data.get("mu", summary_data.get("mu", 0.0)))
+
+            has_ckpt = os.path.exists(ckpt_path)
+            seen_ids.add(folder)
+
+            experiments.append({
+                "experiment_id": folder,
+                "run_folder": folder,
+                "run_dir": folder_path.replace("\\", "/"),
+                "is_isolated_run": True,
+                "model": model,
+                "algorithm": algo,
+                "alpha": alpha_str,
+                "mu": mu_val,
+                "rounds_completed": rounds_completed,
+                "val_accuracy": round(best_val_acc, 4),
+                "val_macro_f1": round(best_val_f1, 4),
+                "mean_client_accuracy": round(float(summary_data.get("mean_client_accuracy", 0.0)), 4),
+                "worst_client_accuracy": round(float(summary_data.get("worst_client_accuracy", 0.0)), 4),
+                "client_accuracy_std": round(float(summary_data.get("client_accuracy_std", 0.0)), 4),
+                "total_time_s": round(total_time, 1),
+                "has_checkpoint": has_ckpt,
+                "checkpoint_name": f"runs/{folder}/checkpoint.pt" if has_ckpt else None,
+                "checkpoint_download_url": f"/api/runs/{folder}/checkpoint" if has_ckpt else None
+            })
+
+    # 2. Add baseline research logs (results/logs/*_rounds.csv)
+    log_files = sorted(glob.glob("results/logs/*_rounds.csv"))
     for log_path in log_files:
         try:
+            exp_id = os.path.basename(log_path).replace("_rounds.csv", "")
+            if exp_id in seen_ids:
+                continue
+
             df = pd.read_csv(log_path)
             if len(df) == 0:
                 continue
             last_row = df.iloc[-1]
-            exp_id = str(last_row.get("experiment", os.path.basename(log_path).replace("_rounds.csv", "")))
             model = str(last_row.get("model", "unknown"))
             algo = str(last_row.get("algorithm", "fedavg")).upper()
             alpha_val = last_row.get("alpha", -1.0)
@@ -260,12 +338,14 @@ async def list_experiments():
             best_val_acc = float(df["validation_accuracy"].max()) if "validation_accuracy" in df else 0.0
             total_time = float(df["round_time_s"].sum()) if "round_time_s" in df else 0.0
 
-            # Check if checkpoint exists
             ckpt_path = f"results/checkpoints/{exp_id}.pt"
             has_checkpoint = os.path.exists(ckpt_path)
 
             experiments.append({
                 "experiment_id": exp_id,
+                "run_folder": None,
+                "run_dir": None,
+                "is_isolated_run": False,
                 "model": model,
                 "algorithm": algo,
                 "alpha": alpha_str,
@@ -278,12 +358,108 @@ async def list_experiments():
                 "client_accuracy_std": round(float(last_row.get("client_accuracy_std", 0.0)), 4),
                 "total_time_s": round(total_time, 1),
                 "has_checkpoint": has_checkpoint,
-                "checkpoint_name": f"{exp_id}.pt" if has_checkpoint else None
+                "checkpoint_name": f"{exp_id}.pt" if has_checkpoint else None,
+                "checkpoint_download_url": f"/api/checkpoints/download/{exp_id}.pt" if has_checkpoint else None
             })
         except Exception as e:
             print(f"Error parsing log {log_path}: {e}")
 
     return experiments
+
+
+@app.get("/api/runs")
+async def list_runs():
+    """Lists all isolated experiment run directories from results/runs/ (never overwritten)."""
+    runs_dir = "results/runs"
+    if not os.path.exists(runs_dir):
+        return []
+
+    folders = [f for f in os.listdir(runs_dir) if os.path.isdir(os.path.join(runs_dir, f))]
+    folders.sort(reverse=True)
+    runs = []
+
+    for folder in folders:
+        folder_path = os.path.join(runs_dir, folder)
+        config_path = os.path.join(folder_path, "config.json")
+        summary_path = os.path.join(folder_path, "summary.json")
+        rounds_path = os.path.join(folder_path, "rounds.csv")
+        ckpt_path = os.path.join(folder_path, "checkpoint.pt")
+        events_path = os.path.join(folder_path, "events.log")
+
+        config_data = {}
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+            except Exception:
+                pass
+
+        summary_data = {}
+        if os.path.exists(summary_path):
+            try:
+                with open(summary_path, "r", encoding="utf-8") as f:
+                    summary_data = json.load(f)
+            except Exception:
+                pass
+
+        has_ckpt = os.path.exists(ckpt_path)
+        ckpt_size_mb = round(os.path.getsize(ckpt_path) / (1024 * 1024), 2) if has_ckpt else 0.0
+
+        rounds_count = 0
+        if os.path.exists(rounds_path):
+            try:
+                df = pd.read_csv(rounds_path)
+                rounds_count = len(df)
+            except Exception:
+                pass
+
+        created_at = config_data.get("created_at", "")
+        if not created_at and os.path.exists(folder_path):
+            created_at = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(os.path.getctime(folder_path)))
+
+        runs.append({
+            "run_folder": folder,
+            "run_dir": folder_path.replace("\\", "/"),
+            "created_at": created_at,
+            "model": config_data.get("model", summary_data.get("model", "unknown")),
+            "algorithm": config_data.get("algorithm", summary_data.get("algorithm", "fedavg")).upper(),
+            "alpha": config_data.get("alpha", summary_data.get("alpha", -1.0)),
+            "is_iid": config_data.get("is_iid", False),
+            "mu": config_data.get("mu", summary_data.get("mu", 0.0)),
+            "rounds_completed": rounds_count or summary_data.get("completed_rounds", 0),
+            "status": summary_data.get("status", "COMPLETED" if summary_data else "IN_PROGRESS"),
+            "val_macro_f1": summary_data.get("test_macro_f1", 0.0),
+            "val_accuracy": summary_data.get("test_accuracy", 0.0),
+            "has_checkpoint": has_ckpt,
+            "has_events_log": os.path.exists(events_path),
+            "checkpoint_size_mb": ckpt_size_mb,
+            "checkpoint_download_url": f"/api/runs/{folder}/checkpoint" if has_ckpt else None,
+            "rounds_csv_url": f"/api/runs/{folder}/rounds" if os.path.exists(rounds_path) else None
+        })
+
+    return runs
+
+
+@app.get("/api/runs/{run_folder}/checkpoint")
+async def download_run_checkpoint(run_folder: str):
+    """Downloads checkpoint.pt from an isolated timestamped run directory."""
+    path = os.path.join("results", "runs", run_folder, "checkpoint.pt")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Checkpoint file not found in run directory.")
+    return FileResponse(path, filename=f"{run_folder}_checkpoint.pt", media_type="application/octet-stream")
+
+
+@app.get("/api/runs/{run_folder}/rounds")
+async def get_run_rounds(run_folder: str):
+    """Returns round metrics from the isolated run directory."""
+    path = os.path.join("results", "runs", run_folder, "rounds.csv")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Rounds CSV not found in run directory.")
+    df = pd.read_csv(path)
+    return {
+        "run_folder": run_folder,
+        "rounds": df.to_dict(orient="records")
+    }
 
 
 @app.get("/api/experiments/active")
@@ -297,35 +473,47 @@ async def get_active_experiment():
 
 @app.get("/api/experiments/{exp_id}")
 async def get_experiment_details(exp_id: str):
-    """Returns round-by-round convergence trajectory for a specific experiment."""
-    log_path = f"results/logs/{exp_id}_rounds.csv"
-    if not os.path.exists(log_path):
-        # Look for match in active job
-        active = orchestrator.active_job
-        if active and active.experiment_id == exp_id:
-            return {
-                "experiment_id": exp_id,
-                "rounds": active.history,
-                "summary": active.summary
-            }
-        raise HTTPException(status_code=404, detail=f"Experiment '{exp_id}' not found.")
+    """Returns round-by-round convergence trajectory for a specific experiment or run directory."""
+    # Check in results/runs/ first
+    run_rounds_path = os.path.join("results", "runs", exp_id, "rounds.csv")
+    if os.path.exists(run_rounds_path):
+        df = pd.read_csv(run_rounds_path)
+        return {
+            "experiment_id": exp_id,
+            "rounds": df.to_dict(orient="records")
+        }
 
-    df = pd.read_csv(log_path)
-    return {
-        "experiment_id": exp_id,
-        "rounds": df.to_dict(orient="records")
-    }
+    # Check in results/logs/
+    log_path = f"results/logs/{exp_id}_rounds.csv"
+    if os.path.exists(log_path):
+        df = pd.read_csv(log_path)
+        return {
+            "experiment_id": exp_id,
+            "rounds": df.to_dict(orient="records")
+        }
+
+    # Look for match in active job
+    active = orchestrator.active_job
+    if active and (active.experiment_id == exp_id or active.run_folder == exp_id):
+        return {
+            "experiment_id": exp_id,
+            "rounds": active.history,
+            "summary": active.summary
+        }
+    raise HTTPException(status_code=404, detail=f"Experiment '{exp_id}' not found.")
 
 
 @app.post("/api/experiments/launch")
 async def launch_experiment(config: Dict[str, Any]):
-    """Launches a federated learning simulation asynchronously."""
+    """Launches a federated learning simulation asynchronously into an isolated run folder."""
     try:
         job = orchestrator.launch_experiment(config)
         return {
             "status": "launched",
             "job_id": job.job_id,
             "experiment_id": job.experiment_id,
+            "run_folder": job.run_folder,
+            "run_dir": job.run_dir,
             "config": config
         }
     except RuntimeError as e:
@@ -345,33 +533,57 @@ async def stop_experiment():
 
 @app.get("/api/checkpoints")
 async def list_checkpoints():
-    """Lists all saved PyTorch checkpoints with file sizes and timestamps."""
-    ckpt_dir = "results/checkpoints"
-    if not os.path.exists(ckpt_dir):
-        return []
-
+    """Lists all saved PyTorch checkpoints across baseline checkouts and isolated run directories."""
     ckpts = []
-    files = sorted(glob.glob(f"{ckpt_dir}/*.pt"))
-    for f in files:
-        fname = os.path.basename(f)
-        size_mb = os.path.getsize(f) / (1024 * 1024)
+
+    # 1. Isolated run directories (newest first)
+    run_ckpts = sorted(glob.glob("results/runs/*/checkpoint.pt"), reverse=True)
+    for f in run_ckpts:
+        folder = os.path.basename(os.path.dirname(f))
+        size_mb = round(os.path.getsize(f) / (1024 * 1024), 2)
         mtime = os.path.getmtime(f)
         ckpts.append({
-            "filename": fname,
-            "size_mb": round(size_mb, 2),
+            "filename": f"runs/{folder}/checkpoint.pt",
+            "source": "isolated_run",
+            "run_folder": folder,
+            "display_name": f"Run: {folder}",
+            "size_mb": size_mb,
             "modified": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(mtime)),
-            "download_url": f"/api/checkpoints/download/{fname}"
+            "download_url": f"/api/runs/{folder}/checkpoint"
         })
+
+    # 2. Baseline checkpoints directory
+    ckpt_dir = "results/checkpoints"
+    if os.path.exists(ckpt_dir):
+        files = sorted(glob.glob(f"{ckpt_dir}/*.pt"))
+        for f in files:
+            fname = os.path.basename(f)
+            size_mb = round(os.path.getsize(f) / (1024 * 1024), 2)
+            mtime = os.path.getmtime(f)
+            ckpts.append({
+                "filename": fname,
+                "source": "baseline_checkpoint",
+                "run_folder": None,
+                "display_name": fname.replace(".pt", ""),
+                "size_mb": size_mb,
+                "modified": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(mtime)),
+                "download_url": f"/api/checkpoints/download/{fname}"
+            })
+
     return ckpts
 
 
-@app.get("/api/checkpoints/download/{filename}")
+@app.get("/api/checkpoints/download/{filename:path}")
 async def download_checkpoint(filename: str):
-    """Downloads model weights file."""
-    path = os.path.join("results/checkpoints", filename)
+    """Downloads model weights file from legacy folder or isolated run directory."""
+    if filename.startswith("runs/"):
+        path = os.path.join("results", filename)
+    else:
+        path = os.path.join("results/checkpoints", filename)
+
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Checkpoint file not found.")
-    return FileResponse(path, filename=filename, media_type="application/octet-stream")
+    return FileResponse(path, filename=os.path.basename(path), media_type="application/octet-stream")
 
 
 @app.post("/api/predict")

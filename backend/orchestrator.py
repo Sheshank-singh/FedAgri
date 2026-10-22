@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from datetime import datetime
 import json
 import uuid
 import asyncio
@@ -28,6 +29,8 @@ class ClientRoundState:
 class ExperimentJob:
     job_id: str
     experiment_id: str
+    run_folder: str
+    run_dir: str
     model_name: str
     algorithm: str
     alpha: float
@@ -108,20 +111,32 @@ class TrainingOrchestrator:
         payload = {
             "type": event_type,
             "job_id": self.active_job.job_id if self.active_job else None,
+            "run_folder": self.active_job.run_folder if self.active_job else None,
+            "run_dir": self.active_job.run_dir if self.active_job else None,
             "timestamp": time.time(),
             "data": data
         }
 
         # Also append to log events of the active job
         if self.active_job:
-            self.active_job.log_events.append({
+            log_item = {
                 "time": time.strftime("%H:%M:%S"),
                 "type": event_type,
                 "message": data.get("message", f"Event: {event_type}")
-            })
+            }
+            self.active_job.log_events.append(log_item)
             # Keep log events bounded
             if len(self.active_job.log_events) > 200:
                 self.active_job.log_events = self.active_job.log_events[-200:]
+
+            # Persist to events.log in the dedicated run directory
+            if self.active_job.run_dir:
+                try:
+                    events_log_path = os.path.join(self.active_job.run_dir, "events.log")
+                    with open(events_log_path, "a", encoding="utf-8") as f:
+                        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [{event_type}] {log_item['message']}\n")
+                except Exception:
+                    pass
 
         if self._loop and self._loop.is_running():
             for q in list(self.subscribers):
@@ -148,14 +163,19 @@ class TrainingOrchestrator:
             local_epochs = int(config.get("local_epochs", 1))
             client_lr = float(config.get("client_lr", 0.001))
 
-            exp_id = f"{algorithm}_{model_name}_{'iid' if is_iid else f'alpha_{alpha}'}"
-            if algorithm == "fedprox":
-                exp_id += f"_mu_{mu}"
-            exp_id += f"_{int(time.time())}"
+            # Industry-standard timestamped isolated run folder (guarantees older ones are NEVER overwritten)
+            now_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            dist_str = "iid" if is_iid else f"alpha_{alpha}"
+            mu_str = f"_mu_{mu}" if algorithm == "fedprox" else ""
+            run_folder = f"{now_str}_{algorithm}_{model_name}_{dist_str}{mu_str}"
+            run_dir = os.path.join("results", "runs", run_folder).replace("\\", "/")
+            os.makedirs(run_dir, exist_ok=True)
 
             job = ExperimentJob(
                 job_id=job_id,
-                experiment_id=exp_id,
+                experiment_id=run_folder,
+                run_folder=run_folder,
+                run_dir=run_dir,
                 model_name=model_name,
                 algorithm=algorithm,
                 alpha=alpha,
@@ -223,6 +243,7 @@ class TrainingOrchestrator:
                 callback=callback,
                 stop_event=stop_event,
                 run_id=job.experiment_id,
+                run_dir=job.run_dir,
                 num_rounds=job.num_rounds,
                 num_clients=job.num_clients,
                 local_epochs=job.local_epochs,

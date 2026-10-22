@@ -78,7 +78,7 @@ export function DiagnosticLabView({ checkpoints, samples, onRunDiagnosis, isPred
           >
             {checkpoints.map((ckpt) => (
               <option key={ckpt.filename} value={ckpt.filename}>
-                {ckpt.filename} ({ckpt.size_mb} MB)
+                {ckpt.display_name || ckpt.filename} ({ckpt.size_mb} MB)
               </option>
             ))}
           </select>

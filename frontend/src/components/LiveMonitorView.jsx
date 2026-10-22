@@ -9,7 +9,10 @@ import {
   Terminal, 
   Radio, 
   HardDriveUpload, 
-  Clock 
+  Clock,
+  Folder,
+  FolderCheck,
+  Download
 } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -269,6 +272,69 @@ export function LiveMonitorView({ activeJob, onStopExperiment }) {
           </div>
         </div>
       </div>
+
+      {/* 1.5 Dedicated Run Directory Banner (Zero Overwrite Guarantee) */}
+      {activeJob?.run_folder && (
+        <div className="glass-panel" style={{
+          padding: '0.9rem 1.25rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          borderLeft: '4px solid var(--color-emerald)',
+          background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.4) 100%)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-emerald)'
+            }}>
+              <Folder size={20} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-emerald)', fontWeight: 700 }}>
+                  Active Run Output Directory
+                </span>
+                <span style={{
+                  fontSize: '0.65rem',
+                  padding: '0.1rem 0.45rem',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  color: 'var(--emerald-300)',
+                  fontWeight: 600
+                }}>
+                  Zero Overwrite Guarantee
+                </span>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.88rem', color: '#fff', fontWeight: 600, marginTop: '0.15rem' }}>
+                results/runs/{activeJob.run_folder}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+            <span>Artifacts: <code>config.json</code> • <code>rounds.csv</code> • <code>summary.json</code> • <code>checkpoint.pt</code></span>
+            {activeJob.status === 'COMPLETED' && (
+              <a
+                href={`/api/runs/${activeJob.run_folder}/checkpoint`}
+                className="btn-emerald"
+                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', textDecoration: 'none' }}
+              >
+                <Download size={13} />
+                <span>Download Checkpoint</span>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 2. Federated Animated Topology Map & Client Matrix */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '1.5rem' }}>

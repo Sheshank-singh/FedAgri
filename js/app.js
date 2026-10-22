@@ -198,6 +198,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Reset monitor charts and switch to monitor tab
         FedCharts.resetCharts();
         document.getElementById("liveEventsTerminal").innerHTML = "";
+        if (resp.run_folder) {
+          appendTerminal(new Date().toLocaleTimeString(), "RUN_INIT", `📁 Provisioned isolated run folder: results/runs/${resp.run_folder}`);
+        }
         switchTab("monitor");
       } catch (err) {
         alert("Launch Failed: " + err.message);

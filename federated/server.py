@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import copy
 import time
+from datetime import datetime
 import json
 import yaml
 import pandas as pd
@@ -45,7 +46,8 @@ class FederatedServer:
         num_clients: Optional[int] = None,
         local_epochs: Optional[int] = None,
         batch_size: Optional[int] = None,
-        client_lr: Optional[float] = None
+        client_lr: Optional[float] = None,
+        run_dir: Optional[str] = None
     ):
         self.model_name = model_name
         self.algorithm = algorithm.lower()
@@ -57,6 +59,19 @@ class FederatedServer:
         self.callback = callback
         self.stop_event = stop_event
         self.run_id = run_id
+
+        # Industry standard: isolated, timestamped run directory
+        if run_dir:
+            self.run_dir = run_dir
+            self.run_folder = os.path.basename(os.path.normpath(run_dir))
+        else:
+            now_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            dist_str = "iid" if self.is_iid else f"alpha_{self.alpha}"
+            mu_str = f"_mu_{self.mu}" if self.algorithm == "fedprox" else ""
+            self.run_folder = f"{now_str}_{self.algorithm}_{self.model_name}_{dist_str}{mu_str}"
+            self.run_dir = os.path.join("results", "runs", self.run_folder)
+
+        os.makedirs(self.run_dir, exist_ok=True)
 
         with open(config_path, "r") as f:
             self.cfg = yaml.safe_load(f)
@@ -150,16 +165,41 @@ class FederatedServer:
 
         os.makedirs("results/logs", exist_ok=True)
         os.makedirs("results/checkpoints", exist_ok=True)
+        os.makedirs(self.run_dir, exist_ok=True)
 
         history = []
         best_val_f1 = -1.0
-        if self.run_id:
-            exp_id = self.run_id
-        else:
-            exp_id = f"{self.algorithm}_{self.model_name}_{'iid' if self.is_iid else f'alpha_{self.alpha}'}"
-            if self.algorithm == "fedprox":
-                exp_id += f"_mu_{self.mu}"
-        checkpoint_path = f"results/checkpoints/{exp_id}.pt"
+        exp_id = self.run_id if self.run_id else self.run_folder
+
+        # Industry standard: isolated run directory artifacts (never overwritten)
+        run_checkpoint_path = os.path.join(self.run_dir, "checkpoint.pt")
+        legacy_checkpoint_path = f"results/checkpoints/{exp_id}.pt"
+
+        # Save config.json immediately in run_dir
+        config_record = {
+            "run_id": exp_id,
+            "run_folder": self.run_folder,
+            "run_dir": self.run_dir.replace("\\", "/"),
+            "created_at": datetime.now().isoformat(),
+            "model": self.model_name,
+            "algorithm": self.algorithm,
+            "is_iid": self.is_iid,
+            "alpha": -1.0 if self.is_iid else float(self.alpha),
+            "mu": float(self.mu),
+            "num_rounds": self.num_rounds,
+            "num_clients": self.num_clients,
+            "local_epochs": self.local_epochs,
+            "batch_size": self.batch_size,
+            "client_lr": self.client_lr,
+            "quick_mode": self.quick,
+            "seed": self.seed,
+            "device": str(self.device),
+            "num_parameters": self.total_params,
+            "model_size_mb": self.model_size_mb,
+            "gflops": self.gflops
+        }
+        with open(os.path.join(self.run_dir, "config.json"), "w", encoding="utf-8") as f:
+            json.dump(config_record, f, indent=2)
 
         total_sim_start = time.time()
         was_cancelled = False
@@ -249,10 +289,14 @@ class FederatedServer:
                   f"Client Acc (Mean/Worst/Std): {robustness_metrics['mean_client_accuracy']:.3f}/"
                   f"{robustness_metrics['worst_client_accuracy']:.3f}/{robustness_metrics['client_accuracy_std']:.3f}")
 
-            # Checkpoint best global model
+            # Checkpoint best global model (isolated run directory guarantees no overwrites)
             if val_metrics["macro_f1"] > best_val_f1:
                 best_val_f1 = val_metrics["macro_f1"]
-                torch.save(self.global_model.state_dict(), checkpoint_path)
+                torch.save(self.global_model.state_dict(), run_checkpoint_path)
+                try:
+                    torch.save(self.global_model.state_dict(), legacy_checkpoint_path)
+                except Exception:
+                    pass
 
             round_entry = {
                 "experiment": exp_id,
@@ -279,8 +323,9 @@ class FederatedServer:
 
         # 5. Final Test Evaluation on isolated test set
         print(f"\nEvaluating Global Model on Unseen Test Split...")
-        if os.path.exists(checkpoint_path):
-            self.global_model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
+        eval_ckpt = run_checkpoint_path if os.path.exists(run_checkpoint_path) else legacy_checkpoint_path
+        if os.path.exists(eval_ckpt):
+            self.global_model.load_state_dict(torch.load(eval_ckpt, map_location=self.device))
         test_metrics, _, _ = evaluate_model(self.global_model, self.test_loader, self.criterion, self.device)
         latency_ms = measure_inference_latency(self.global_model, self.device)
 
@@ -298,14 +343,23 @@ class FederatedServer:
         print(f"  Total Simulation Time:{total_sim_time}s")
         print(f"  Total Comm Volume:    {comm_stats['total_communication_mb']} MB ({comm_stats['total_communication_gb']} GB)")
 
-        # Save per-round CSV history
+        # Save per-round CSV history to dedicated run folder
         df_history = pd.DataFrame(history)
-        history_csv = f"results/logs/{exp_id}_rounds.csv"
-        df_history.to_csv(history_csv, index=False)
-        print(f"[Saved Round History] -> {history_csv}")
+        run_history_csv = os.path.join(self.run_dir, "rounds.csv")
+        df_history.to_csv(run_history_csv, index=False)
+        print(f"[Saved Isolated Run History] -> {run_history_csv}")
+
+        # Legacy copy for backwards compatibility
+        legacy_history_csv = f"results/logs/{exp_id}_rounds.csv"
+        try:
+            df_history.to_csv(legacy_history_csv, index=False)
+        except Exception:
+            pass
 
         summary = {
             "experiment": exp_id,
+            "run_folder": self.run_folder,
+            "run_dir": self.run_dir.replace("\\", "/"),
             "model": self.model_name,
             "algorithm": self.algorithm,
             "alpha": -1.0 if self.is_iid else float(self.alpha),
@@ -327,8 +381,15 @@ class FederatedServer:
             "total_communication_mb": comm_stats["total_communication_mb"],
             "gflops": self.gflops,
             "inference_latency_ms": latency_ms,
-            "checkpoint_path": checkpoint_path if os.path.exists(checkpoint_path) else None
+            "checkpoint_path": run_checkpoint_path if os.path.exists(run_checkpoint_path) else None,
+            "rounds_csv_path": run_history_csv,
+            "config_path": os.path.join(self.run_dir, "config.json"),
+            "completed_at": datetime.now().isoformat()
         }
+
+        # Write summary.json inside the dedicated run directory
+        with open(os.path.join(self.run_dir, "summary.json"), "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2)
 
         if self.callback and hasattr(self.callback, "on_simulation_complete"):
             self.callback.on_simulation_complete(summary)

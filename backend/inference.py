@@ -2,6 +2,7 @@ import os
 import io
 import json
 import time
+import glob
 import torch
 import torch.nn.functional as F
 from PIL import Image
@@ -228,14 +229,14 @@ def load_classes_mapping(config_path: str = "configs/config.yaml") -> Tuple[Dict
 
 
 def infer_model_name_from_checkpoint(checkpoint_filename: str) -> str:
-    fname = os.path.basename(checkpoint_filename).lower()
-    if "mobilenetv3" in fname:
+    path_str = checkpoint_filename.lower().replace("\\", "/")
+    if "mobilenetv3" in path_str:
         return "mobilenetv3"
-    elif "resnet50" in fname:
+    elif "resnet50" in path_str:
         return "resnet50"
-    elif "efficientnet_b0" in fname:
+    elif "efficientnet_b0" in path_str or "efficientnet" in path_str:
         return "efficientnet_b0"
-    elif "convnext_tiny" in fname:
+    elif "convnext_tiny" in path_str or "convnext" in path_str:
         return "convnext_tiny"
     return "mobilenetv3"
 
@@ -278,6 +279,7 @@ def predict_leaf_disease(
 ) -> Dict:
     """
     Runs real-time inference on an input leaf image using the specified checkpoint.
+    Supports checkpoints in results/checkpoints/ or results/runs/<folder>/checkpoint.pt.
     Returns:
       - Top-K class predictions with probabilities
       - Crop name & condition
@@ -285,12 +287,25 @@ def predict_leaf_disease(
       - Inference latency (ms)
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    checkpoint_path = os.path.join("results/checkpoints", checkpoint_name)
-    if not os.path.exists(checkpoint_path):
-        # Look for partial matches
-        candidates = [f for f in os.listdir("results/checkpoints") if checkpoint_name in f]
-        if candidates:
-            checkpoint_path = os.path.join("results/checkpoints", candidates[0])
+    
+    # Resolve checkpoint path across legacy and isolated run folders
+    if os.path.exists(checkpoint_name):
+        checkpoint_path = checkpoint_name
+    elif os.path.exists(os.path.join("results", checkpoint_name)):
+        checkpoint_path = os.path.join("results", checkpoint_name)
+    elif os.path.exists(os.path.join("results/checkpoints", checkpoint_name)):
+        checkpoint_path = os.path.join("results/checkpoints", checkpoint_name)
+    else:
+        # Check inside results/runs
+        runs_matches = glob.glob(f"results/runs/*{checkpoint_name}*/checkpoint.pt")
+        if runs_matches:
+            checkpoint_path = runs_matches[0]
+        else:
+            candidates = [f for f in os.listdir("results/checkpoints") if checkpoint_name in f] if os.path.exists("results/checkpoints") else []
+            if candidates:
+                checkpoint_path = os.path.join("results/checkpoints", candidates[0])
+            else:
+                checkpoint_path = os.path.join("results/checkpoints", checkpoint_name)
 
     model_name = infer_model_name_from_checkpoint(checkpoint_path)
     model = get_or_load_model(checkpoint_path, model_name=model_name, device=device)

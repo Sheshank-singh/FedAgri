@@ -10,7 +10,9 @@ import {
   Layers, 
   Gauge, 
   Info,
-  Sparkles
+  Sparkles,
+  FolderPlus,
+  ShieldCheck
 } from 'lucide-react';
 
 export function StudioView({ models, onLaunchExperiment, isLaunching }) {
@@ -435,6 +437,50 @@ export function StudioView({ models, onLaunchExperiment, isLaunching }) {
                 </>
               )}
             </button>
+
+            {/* MLOps Industry Standard Output Directory Preview */}
+            <div style={{
+              marginTop: '0.85rem',
+              padding: '0.75rem 0.95rem',
+              background: 'rgba(16, 185, 129, 0.04)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.76rem',
+              color: 'var(--text-secondary)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-emerald)', fontWeight: 700 }}>
+                  <FolderPlus size={14} />
+                  <span>Isolated Run Output Directory</span>
+                </div>
+                <span style={{
+                  fontSize: '0.65rem',
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  color: 'var(--emerald-300)',
+                  fontWeight: 600
+                }}>
+                  Zero Overwrite Guarantee
+                </span>
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.73rem',
+                color: '#fff',
+                background: 'rgba(0, 0, 0, 0.3)',
+                padding: '0.35rem 0.6rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                wordBreak: 'break-all',
+                marginTop: '0.35rem'
+              }}>
+                results/runs/<strong>[TIMESTAMP]_{algorithm}_{selectedModel}_{isIid ? 'iid' : `alpha_${alpha}`}{algorithm === 'fedprox' ? `_mu_${mu}` : ''}/</strong>
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                Each simulation provisions an isolated folder with its own <code>config.json</code>, <code>rounds.csv</code>, <code>summary.json</code>, and <code>checkpoint.pt</code>. Older experiments are permanently preserved.
+              </div>
+            </div>
           </div>
         </div>
       </form>

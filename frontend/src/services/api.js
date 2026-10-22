@@ -85,6 +85,12 @@ export const api = {
     return res.json();
   },
 
+  async getRuns() {
+    const res = await fetch('/api/runs');
+    if (!res.ok) throw new Error('Failed to fetch runs');
+    return res.json();
+  },
+
   async getFigures() {
     const res = await fetch('/api/figures');
     if (!res.ok) throw new Error('Failed to fetch figures');

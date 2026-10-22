@@ -32,10 +32,12 @@ export function BenchmarkView({ experiments, figures, checkpoints, onOpenFigureM
     const matchesSearch = 
       exp.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exp.algorithm.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (exp.run_folder && exp.run_folder.toLowerCase().includes(searchQuery.toLowerCase())) ||
       String(exp.alpha).includes(searchQuery);
 
     if (!matchesSearch) return false;
 
+    if (filterType === 'runs') return exp.is_isolated_run;
     if (filterType === 'fedprox') return exp.algorithm.toLowerCase().includes('prox');
     if (filterType === 'fedavg') return !exp.algorithm.toLowerCase().includes('prox');
     if (filterType === 'severe') return String(exp.alpha) === '0.1';
@@ -145,9 +147,10 @@ export function BenchmarkView({ experiments, figures, checkpoints, onOpenFigureM
 
           {/* Filter Pills & Search */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.04)', borderRadius: 'var(--radius-md)', padding: '2px', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.04)', borderRadius: 'var(--radius-md)', padding: '2px', border: '1px solid var(--border-subtle)', flexWrap: 'wrap' }}>
               {[
-                { id: 'all', label: 'All' },
+                { id: 'all', label: 'All Experiments' },
+                { id: 'runs', label: '📁 Custom Runs (results/runs/)' },
                 { id: 'severe', label: 'Severe Non-IID (α=0.1)' },
                 { id: 'fedprox', label: 'FedProx Only' },
                 { id: 'fedavg', label: 'FedAvg Only' },
@@ -191,7 +194,7 @@ export function BenchmarkView({ experiments, figures, checkpoints, onOpenFigureM
           <table className="fed-table">
             <thead>
               <tr>
-                <th>Model</th>
+                <th>Model / Run Folder</th>
                 <th>Algorithm</th>
                 <th>Heterogeneity</th>
                 <th>μ (FedProx)</th>
@@ -214,7 +217,37 @@ export function BenchmarkView({ experiments, figures, checkpoints, onOpenFigureM
               ) : (
                 filteredExperiments.map((exp) => (
                   <tr key={exp.experiment_id}>
-                    <td><b style={{ color: '#fff' }}>{exp.model.toUpperCase()}</b></td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <b style={{ color: '#fff' }}>{exp.model.toUpperCase()}</b>
+                          {exp.is_isolated_run && (
+                            <span style={{
+                              fontSize: '0.62rem',
+                              fontWeight: 700,
+                              background: 'rgba(16, 185, 129, 0.2)',
+                              color: 'var(--emerald-300)',
+                              padding: '0.05rem 0.35rem',
+                              borderRadius: '4px',
+                              marginLeft: '0.4rem',
+                              border: '1px solid rgba(16, 185, 129, 0.3)'
+                            }}>
+                              CUSTOM RUN
+                            </span>
+                          )}
+                        </div>
+                        {exp.run_folder && (
+                          <span style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '0.68rem',
+                            color: 'var(--text-tertiary)',
+                            marginTop: '0.15rem'
+                          }}>
+                            {exp.run_folder}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td>
                       <span style={{
                         fontSize: '0.72rem',
@@ -239,7 +272,7 @@ export function BenchmarkView({ experiments, figures, checkpoints, onOpenFigureM
                     <td>
                       {exp.has_checkpoint ? (
                         <a
-                          href={`/api/checkpoints/download/${exp.checkpoint_name}`}
+                          href={exp.checkpoint_download_url || `/api/checkpoints/download/${exp.checkpoint_name}`}
                           className="btn-outline"
                           style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem', textDecoration: 'none' }}
                         >

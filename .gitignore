@@ -25,6 +25,9 @@ wheels/
 # Data & checkpoints (keep code repo lightweight)
 data/raw/
 results/checkpoints/*.pt
+results/runs/*
+!results/runs/.gitkeep
+*.pt
 *.pth
 
 # Jupyter Notebook checkpoints
