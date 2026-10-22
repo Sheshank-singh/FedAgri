@@ -134,6 +134,22 @@ python federated/partition.py
 
 ## 9. Execution Commands
 
+### Launch the FedAgri Web Platform (Recommended)
+Launch the unified interactive web interface and backend server with real-time telemetry:
+```bash
+python run_platform.py
+```
+Open **`http://localhost:8000`** in any web browser to:
+- Configure and launch federated experiments with 1 click
+- Stream real-time client training losses, validation accuracy, and worst-client robustness metrics
+- Inspect 13+ benchmark experiments and multi-dimensional Pareto charts
+- Run real-time plant disease diagnostic inference on leaf images with agronomic treatment prescriptions
+- Explore the 38-class PlantVillage dataset and visualize Dirichlet non-IID label skew
+
+---
+
+### Command Line Interface (CLI) Execution
+
 ### Quick Verification Mode (`--quick`)
 Test the entire pipeline in under 2 minutes (subsampled data, 3 clients, 3 rounds):
 ```bash

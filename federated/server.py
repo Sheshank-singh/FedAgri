@@ -37,7 +37,15 @@ class FederatedServer:
         is_iid: bool = False,
         mu: float = 0.0,
         config_path: str = "configs/config.yaml",
-        quick: bool = False
+        quick: bool = False,
+        callback: Optional[object] = None,
+        stop_event: Optional[object] = None,
+        run_id: Optional[str] = None,
+        num_rounds: Optional[int] = None,
+        num_clients: Optional[int] = None,
+        local_epochs: Optional[int] = None,
+        batch_size: Optional[int] = None,
+        client_lr: Optional[float] = None
     ):
         self.model_name = model_name
         self.algorithm = algorithm.lower()
@@ -46,6 +54,9 @@ class FederatedServer:
         self.mu = mu if self.algorithm == "fedprox" else 0.0
         self.config_path = config_path
         self.quick = quick
+        self.callback = callback
+        self.stop_event = stop_event
+        self.run_id = run_id
 
         with open(config_path, "r") as f:
             self.cfg = yaml.safe_load(f)
@@ -59,16 +70,23 @@ class FederatedServer:
         self.num_classes = self.cfg["dataset"].get("num_classes", 38)
         self.image_size = self.cfg["dataset"].get("image_size", 224)
 
-        if quick:
+        if num_clients is not None:
+            self.num_clients = num_clients
+        elif quick:
             self.num_clients = self.cfg["federated"].get("quick_clients", 3)
-            self.num_rounds = self.cfg["federated"].get("quick_rounds", 3)
         else:
             self.num_clients = self.cfg["federated"].get("num_clients", 5)
+
+        if num_rounds is not None:
+            self.num_rounds = num_rounds
+        elif quick:
+            self.num_rounds = self.cfg["federated"].get("quick_rounds", 3)
+        else:
             self.num_rounds = self.cfg["federated"].get("num_rounds", 20)
 
-        self.local_epochs = self.cfg["federated"].get("local_epochs", 1)
-        self.batch_size = self.cfg["federated"].get("batch_size", 32)
-        self.client_lr = self.cfg["federated"].get("client_lr", 0.001)
+        self.local_epochs = local_epochs if local_epochs is not None else self.cfg["federated"].get("local_epochs", 1)
+        self.batch_size = batch_size if batch_size is not None else self.cfg["federated"].get("batch_size", 32)
+        self.client_lr = client_lr if client_lr is not None else self.cfg["federated"].get("client_lr", 0.001)
 
         # 1. Initialize Global Model (Pretrained on ImageNet)
         self.global_model = create_model(self.model_name, num_classes=self.num_classes, pretrained=True)
@@ -135,15 +153,41 @@ class FederatedServer:
 
         history = []
         best_val_f1 = -1.0
-        exp_id = f"{self.algorithm}_{self.model_name}_{'iid' if self.is_iid else f'alpha_{self.alpha}'}"
-        if self.algorithm == "fedprox":
-            exp_id += f"_mu_{self.mu}"
+        if self.run_id:
+            exp_id = self.run_id
+        else:
+            exp_id = f"{self.algorithm}_{self.model_name}_{'iid' if self.is_iid else f'alpha_{self.alpha}'}"
+            if self.algorithm == "fedprox":
+                exp_id += f"_mu_{self.mu}"
         checkpoint_path = f"results/checkpoints/{exp_id}.pt"
 
         total_sim_start = time.time()
+        was_cancelled = False
+
+        if self.callback and hasattr(self.callback, "on_experiment_start"):
+            self.callback.on_experiment_start({
+                "experiment": exp_id,
+                "model": self.model_name,
+                "algorithm": self.algorithm,
+                "alpha": -1.0 if self.is_iid else float(self.alpha),
+                "mu": float(self.mu),
+                "num_rounds": self.num_rounds,
+                "num_clients": self.num_clients,
+                "batch_size": self.batch_size,
+                "local_epochs": self.local_epochs,
+                "client_lr": self.client_lr
+            })
 
         for rnd in range(1, self.num_rounds + 1):
+            if self.stop_event and getattr(self.stop_event, "is_set", lambda: False)():
+                print(f"[Simulation Cancelled by User at Round {rnd}]")
+                was_cancelled = True
+                break
+
             round_start = time.time()
+            if self.callback and hasattr(self.callback, "on_round_start"):
+                self.callback.on_round_start(rnd, self.num_rounds)
+
             global_weights = {k: v.cpu().clone() for k, v in self.global_model.state_dict().items()}
 
             client_weights = []
@@ -153,11 +197,26 @@ class FederatedServer:
 
             # 1. Virtual Clients Train Locally
             for client in self.clients:
+                if self.stop_event and getattr(self.stop_event, "is_set", lambda: False)():
+                    was_cancelled = True
+                    break
                 w_updated, n_k, loss_k, acc_k = client.fit(global_weights, mu=self.mu)
                 client_weights.append(w_updated)
                 client_samples.append(n_k)
                 client_losses.append(loss_k)
                 client_accs.append(acc_k)
+
+                if self.callback and hasattr(self.callback, "on_client_fit_complete"):
+                    self.callback.on_client_fit_complete(
+                        round_num=rnd,
+                        client_id=client.client_id,
+                        loss=round(float(loss_k), 4),
+                        accuracy=round(float(acc_k), 4),
+                        sample_count=n_k
+                    )
+
+            if was_cancelled:
+                break
 
             # 2. Server Aggregation (Weighted by client dataset size)
             if self.algorithm == "fedprox":
@@ -166,6 +225,8 @@ class FederatedServer:
                 aggregated = aggregate_fedavg(client_weights, client_samples)
 
             self.global_model.load_state_dict(aggregated)
+            if self.callback and hasattr(self.callback, "on_aggregation_complete"):
+                self.callback.on_aggregation_complete(rnd, self.algorithm, self.mu)
 
             # 3. Global Model Validation Evaluation
             val_metrics, _, _ = evaluate_model(self.global_model, self.val_loader, self.criterion, self.device)
@@ -193,7 +254,7 @@ class FederatedServer:
                 best_val_f1 = val_metrics["macro_f1"]
                 torch.save(self.global_model.state_dict(), checkpoint_path)
 
-            history.append({
+            round_entry = {
                 "experiment": exp_id,
                 "model": self.model_name,
                 "algorithm": self.algorithm,
@@ -208,20 +269,26 @@ class FederatedServer:
                 "worst_client_accuracy": robustness_metrics["worst_client_accuracy"],
                 "client_accuracy_std": robustness_metrics["client_accuracy_std"],
                 "round_time_s": round(round_time, 2)
-            })
+            }
+            history.append(round_entry)
+
+            if self.callback and hasattr(self.callback, "on_round_complete"):
+                self.callback.on_round_complete(round_entry)
 
         total_sim_time = round(time.time() - total_sim_start, 2)
 
         # 5. Final Test Evaluation on isolated test set
-        print(f"\nEvaluating Best Global Model on Unseen Test Split...")
-        self.global_model.load_state_dict(torch.load(checkpoint_path))
+        print(f"\nEvaluating Global Model on Unseen Test Split...")
+        if os.path.exists(checkpoint_path):
+            self.global_model.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
         test_metrics, _, _ = evaluate_model(self.global_model, self.test_loader, self.criterion, self.device)
         latency_ms = measure_inference_latency(self.global_model, self.device)
 
+        completed_rounds = len(history)
         comm_stats = calculate_communication_cost(
             model_size_mb=self.model_size_mb,
             num_clients=self.num_clients,
-            num_rounds=self.num_rounds
+            num_rounds=max(completed_rounds, 1)
         )
 
         print(f"\n=== Final Federated Results for {exp_id} ===")
@@ -244,20 +311,26 @@ class FederatedServer:
             "alpha": -1.0 if self.is_iid else float(self.alpha),
             "mu": float(self.mu),
             "rounds": self.num_rounds,
+            "completed_rounds": completed_rounds,
+            "was_cancelled": was_cancelled,
             "num_clients": self.num_clients,
             "test_accuracy": test_metrics["accuracy"],
             "test_macro_precision": test_metrics["macro_precision"],
             "test_macro_recall": test_metrics["macro_recall"],
             "test_macro_f1": test_metrics["macro_f1"],
             "test_weighted_f1": test_metrics["weighted_f1"],
-            "mean_client_accuracy": history[-1]["mean_client_accuracy"],
-            "worst_client_accuracy": history[-1]["worst_client_accuracy"],
-            "client_accuracy_std": history[-1]["client_accuracy_std"],
+            "mean_client_accuracy": history[-1]["mean_client_accuracy"] if history else 0.0,
+            "worst_client_accuracy": history[-1]["worst_client_accuracy"] if history else 0.0,
+            "client_accuracy_std": history[-1]["client_accuracy_std"] if history else 0.0,
             "training_time_s": total_sim_time,
             "model_size_mb": self.model_size_mb,
             "total_communication_mb": comm_stats["total_communication_mb"],
             "gflops": self.gflops,
-            "inference_latency_ms": latency_ms
+            "inference_latency_ms": latency_ms,
+            "checkpoint_path": checkpoint_path if os.path.exists(checkpoint_path) else None
         }
+
+        if self.callback and hasattr(self.callback, "on_simulation_complete"):
+            self.callback.on_simulation_complete(summary)
 
         return summary

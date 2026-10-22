@@ -1,1138 +1,558 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FedAgri-Robust: Robust Federated Learning for Plant Disease Classification</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- KaTeX for Beautiful Mathematical Formula Rendering -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+  <meta name="description" content="FedAgri: Robust Federated Learning Platform for Plant Disease Classification under Non-IID Agricultural Data.">
+  <meta name="theme-color" content="#080f0c">
+  <title>FedAgri — Federated Learning Platform for Smart Agriculture</title>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-    code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
-    
-    .glass-card {
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(51, 65, 85, 0.6);
-    }
-    .math-display-card {
-      background: rgba(2, 6, 23, 0.85);
-      border: 1px solid rgba(59, 130, 246, 0.35);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-    .katex { font-size: 1.12em !important; }
-    .katex-display { margin: 0.75em 0 !important; }
-    
-    /* Smooth Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #020617; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #334155; }
-  </style>
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Chart.js for real-time telemetry -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/styles/main.css">
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
+<body>
 
-  <!-- ========================================================================= -->
-  <!-- TOP STICKY CONTROLLER / NAVIGATION -->
-  <!-- ========================================================================= -->
-  <header class="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 py-3 px-4 sm:px-6 shadow-xl">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
-        <div>
-          <h1 class="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
-            <span>FedAgri-Robust</span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30 uppercase tracking-wide">
-              Academic Defense Presentation
-            </span>
-          </h1>
-          <p class="text-[11px] text-slate-400 hidden sm:block">
-            Robust Federated Learning for Plant Disease Classification under Non-IID Data • Comparative Study of 4 CNNs
-          </p>
-        </div>
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="brand-container">
+      <div class="brand-logo-icon">🌿</div>
+      <div class="brand-text">
+        <h1>FedAgri</h1>
+        <p>Federated Learning Platform for Smart Agriculture</p>
+      </div>
+    </div>
+
+    <div class="header-status-area">
+      <!-- Hardware Status Pill -->
+      <div class="system-pill" id="systemStatusPill">
+        <span class="pulsing-dot" id="systemStatusDot"></span>
+        <span id="systemStatusText">Detecting Hardware...</span>
       </div>
 
-      <!-- JUMP TO SECTION SELECTOR -->
-      <div class="flex items-center gap-2">
-        <label for="section-nav" class="text-xs text-slate-400 font-semibold whitespace-nowrap">Section:</label>
-        <select id="section-nav" onchange="scrollToSection(this.value)" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 max-w-[280px] sm:max-w-xs cursor-pointer">
-          <option value="sec-story">System Methodology & Narrative</option>
-          <option value="sec-1">1. Research Objectives</option>
-          <option value="sec-2">2. Problem Formulation</option>
-          <option value="sec-3">3. PlantVillage Dataset & Partitioning</option>
-          <option value="sec-4">4. Multi-Client Heterogeneity Setup</option>
-          <option value="sec-5">5. Image Preprocessing Protocol</option>
-          <option value="sec-6">6. Federated Learning Framework</option>
-          <option value="sec-7">7. 5-Stage Communication Round</option>
-          <option value="sec-8">8. FedAvg Baseline Formulation</option>
-          <option value="sec-9">9. The Client Drift Phenomenon</option>
-          <option value="sec-10">10. FedProx Algorithmic Formulation</option>
-          <option value="sec-11">11. Proximal Regularization Dynamics (μ)</option>
-          <option value="sec-12">12. Dirichlet Concentration Parameter (α)</option>
-          <option value="sec-13">13. Statistical Heterogeneity (Non-IID)</option>
-          <option value="sec-14">14. Experimental Hyperparameters</option>
-          <option value="sec-15">15. Optimization Step Size (η)</option>
-          <option value="sec-16">16. Mini-Batch Stochastic Updates</option>
-          <option value="sec-17">17. Local Computation Budget (E)</option>
-          <option value="sec-18">18. Federated Convergence Horizon (T)</option>
-          <option value="sec-19">19. Adam Moment Estimation</option>
-          <option value="sec-20">20. Deterministic Partition Fairness (Seed 42)</option>
-          <option value="sec-21">21. Architecture Selection Rationale</option>
-          <option value="sec-22">22. High-Capacity Vulnerability (ResNet50)</option>
-          <option value="sec-23">23. Model Representation Capacity</option>
-          <option value="sec-24">24. Computational Complexity (GFLOPs)</option>
-          <option value="sec-25">25. Edge Inference Latency</option>
-          <option value="sec-26">26. Cumulative Network Communication (GB)</option>
-          <option value="sec-27">27. Evaluation Metric: Macro-F1</option>
-          <option value="sec-28">28. Multi-Class Metric Formulation</option>
-          <option value="sec-29">29. Core Empirical Findings (+49.83% Rescue)</option>
-          <option value="sec-30">30. Hardware Deployment Recommendations</option>
-          <option value="sec-31">31. Comprehensive Parameter Reference</option>
-          <option value="sec-32">32. Critical Control Parameters</option>
-          <option value="sec-33">33. Executive Technical Summary</option>
-        </select>
-        <button onclick="window.print()" class="hidden sm:inline-flex items-center px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold">
-          🖨️ Print View
-        </button>
+      <!-- WebSocket Live Connection Pill -->
+      <div class="system-pill" id="wsStatusPill">
+        <span class="pulsing-dot" id="wsStatusDot"></span>
+        <span id="wsStatusText">Live Telemetry</span>
       </div>
     </div>
   </header>
 
-  <!-- ========================================================================= -->
-  <!-- MAIN PRESENTATION CONTENT -->
-  <!-- ========================================================================= -->
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-12">
+  <!-- Navigation Bar Tabs -->
+  <nav class="nav-tabs">
+    <button class="nav-tab-btn active" data-tab="studio">
+      <span>⚙️</span> Experiment Studio
+    </button>
+    <button class="nav-tab-btn" data-tab="monitor">
+      <span>📡</span> Live Monitor <span class="tab-badge" id="monitorTabBadge">Live</span>
+    </button>
+    <button class="nav-tab-btn" data-tab="results">
+      <span>📊</span> Benchmark Results
+    </button>
+    <button class="nav-tab-btn" data-tab="diagnostics">
+      <span>🔬</span> Disease Classifier
+    </button>
+    <button class="nav-tab-btn" data-tab="dataset">
+      <span>🌱</span> Dataset & Partitions
+    </button>
+  </nav>
 
-    <!-- ========================================================================= -->
-    <!-- SYSTEM METHODOLOGY CHAIN -->
-    <!-- ========================================================================= -->
-    <section id="sec-story" class="glass-card rounded-2xl p-6 sm:p-8 border-2 border-blue-500/30 relative overflow-hidden">
-      <div class="flex items-center justify-between gap-4 mb-3">
-        <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase tracking-wider">
-          System Architecture & Methodological Flow
-        </span>
-        <span class="text-xs text-slate-400 font-mono">End-to-End Experimental Pipeline</span>
-      </div>
+  <!-- Main Workspaces Container -->
+  <main class="app-container">
+
+    <!-- ============================================================== -->
+    <!-- VIEW 1: EXPERIMENT STUDIO                                      -->
+    <!-- ============================================================== -->
+    <section class="view-section active" id="view-studio">
+      <form id="formLaunchExperiment">
+        
+        <!-- Model Selection Section -->
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+          <div class="card-header">
+            <div>
+              <h2>🧠 Select Backbone Architecture</h2>
+              <span class="header-desc">Choose from lightweight edge models or conventional deep convolutional backbones</span>
+            </div>
+            <span class="tab-badge">4 Pretrained CNNs</span>
+          </div>
+
+          <div class="model-grid" id="modelGrid">
+            <!-- Dynamically populated by app.js -->
+          </div>
+        </div>
+
+        <!-- Hyperparameters & Federated Topology Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+          
+          <!-- Column 1: Federated Topology & Optimization -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h3>🌾 Federated Optimization & Heterogeneity</h3>
+            </div>
+
+            <!-- Algorithm Selection -->
+            <div class="form-group">
+              <label class="form-label" for="selectAlgo">
+                <span>Federated Aggregation Algorithm</span>
+                <span class="label-tag">Core Optimizer</span>
+              </label>
+              <select class="form-select" id="selectAlgo">
+                <option value="fedavg">FedAvg — Sample-Weighted Federated Averaging</option>
+                <option value="fedprox" selected>FedProx — Proximal Regularized Aggregation (Mitigates Drift)</option>
+              </select>
+            </div>
+
+            <!-- Dirichlet Alpha Slider -->
+            <div class="form-group">
+              <label class="form-label" for="sliderAlpha">
+                <span>Dirichlet Heterogeneity Parameter (α)</span>
+                <span class="range-val-badge" id="badgeAlpha">0.1</span>
+              </label>
+              <div class="range-container">
+                <span style="font-size:0.75rem; color:#f43f5e">Severe Non-IID (0.1)</span>
+                <input type="range" class="form-range" id="sliderAlpha" min="0.1" max="10.0" step="0.1" value="0.1">
+                <span style="font-size:0.75rem; color:#10b981">Near-IID (10.0)</span>
+              </div>
+              <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" id="checkIid" style="accent-color: var(--accent-primary);">
+                <label for="checkIid" style="font-size:0.8rem; color:#94a3b8; cursor:pointer;">Override with Uniform IID Partition</label>
+              </div>
+            </div>
+
+            <!-- FedProx Mu Slider -->
+            <div class="form-group" id="muFormGroup">
+              <label class="form-label" for="sliderMu">
+                <span>FedProx Proximal Term (μ)</span>
+                <span class="range-val-badge" id="badgeMu">0.01</span>
+              </label>
+              <div class="range-container">
+                <span style="font-size:0.75rem; color:#94a3b8">0.001</span>
+                <input type="range" class="form-range" id="sliderMu" min="0.001" max="0.1" step="0.001" value="0.01">
+                <span style="font-size:0.75rem; color:#94a3b8">0.10</span>
+              </div>
+            </div>
+
+            <!-- Quick Mode Checkbox -->
+            <div class="form-group" style="background: rgba(16, 185, 129, 0.08); border: 1px dashed var(--accent-primary); border-radius: var(--radius-md); padding: 0.85rem;">
+              <div style="display:flex; align-items:center; gap:0.6rem;">
+                <input type="checkbox" id="checkQuickMode" checked style="accent-color: var(--accent-primary); width:18px; height:18px; cursor:pointer;">
+                <label for="checkQuickMode" style="font-weight:600; color:var(--accent-light); cursor:pointer;">⚡ Quick Verification Mode</label>
+              </div>
+              <p style="font-size:0.78rem; color:#94a3b8; margin-top:0.3rem; margin-left: 1.7rem;">
+                Uses 3 clients and 3 rounds on subsampled data for instant pipeline testing in under 60 seconds. Uncheck for full 20-round scientific execution.
+              </p>
+            </div>
+          </div>
+
+          <!-- Column 2: Client Fleet & Local Training -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h3>🚜 Client Fleet & Local Hyperparameters</h3>
+            </div>
+
+            <!-- Virtual Clients Slider -->
+            <div class="form-group">
+              <label class="form-label" for="sliderClients">
+                <span>Simulated Virtual Clients (K)</span>
+                <span class="range-val-badge" id="badgeClients">3</span>
+              </label>
+              <div class="range-container">
+                <span style="font-size:0.75rem; color:#94a3b8">3</span>
+                <input type="range" class="form-range" id="sliderClients" min="3" max="10" step="1" value="3">
+                <span style="font-size:0.75rem; color:#94a3b8">10</span>
+              </div>
+            </div>
+
+            <!-- Total Rounds Slider -->
+            <div class="form-group">
+              <label class="form-label" for="sliderRounds">
+                <span>Total Federated Rounds (T)</span>
+                <span class="range-val-badge" id="badgeRounds">3</span>
+              </label>
+              <div class="range-container">
+                <span style="font-size:0.75rem; color:#94a3b8">3</span>
+                <input type="range" class="form-range" id="sliderRounds" min="3" max="50" step="1" value="3">
+                <span style="font-size:0.75rem; color:#94a3b8">50</span>
+              </div>
+            </div>
+
+            <!-- Batch Size & Local Epochs -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label" for="selectBatchSize">Batch Size</label>
+                <select class="form-select" id="selectBatchSize">
+                  <option value="16">16 samples</option>
+                  <option value="32" selected>32 samples</option>
+                  <option value="64">64 samples</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="selectLocalEpochs">Local Epochs (E)</label>
+                <select class="form-select" id="selectLocalEpochs">
+                  <option value="1" selected>1 epoch</option>
+                  <option value="2">2 epochs</option>
+                  <option value="3">3 epochs</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Client Learning Rate -->
+            <div class="form-group">
+              <label class="form-label" for="inputLr">Client Optimizer Learning Rate (AdamW)</label>
+              <input type="number" class="form-control" id="inputLr" value="0.001" step="0.0001" min="0.00001" max="0.1">
+            </div>
+          </div>
+        </div>
+
+        <!-- Launch Button -->
+        <div style="display:flex; justify-content: flex-end; gap: 1rem;">
+          <button type="submit" class="btn btn-primary" id="btnLaunchExp" style="padding: 1rem 2.5rem; font-size: 1.05rem;">
+            <span>🚀 Launch Federated Experiment</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 2: REAL-TIME LIVE MONITOR                                 -->
+    <!-- ============================================================== -->
+    <section class="view-section" id="view-monitor">
       
-      <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 py-4 text-xs sm:text-sm font-bold text-center">
-        <div class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200">
-          Agricultural Privacy & Bandwidth
+      <!-- Top Metrics Live Bar -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Status</div>
+          <div class="metric-value accent" id="valSimStatus">IDLE</div>
+          <div class="metric-sub" id="valSimModel">Ready to launch</div>
         </div>
-        <span class="text-blue-400 font-black">➔</span>
-        <div class="px-3 py-2 rounded-xl bg-blue-950/60 border border-blue-500/40 text-blue-300">
-          Federated Learning
+        <div class="metric-card">
+          <div class="metric-label">Validation Accuracy</div>
+          <div class="metric-value accent" id="valValAcc">--</div>
+          <div class="metric-sub">Global checkpoint</div>
         </div>
-        <span class="text-blue-400 font-black">➔</span>
-        <div class="px-3 py-2 rounded-xl bg-purple-950/60 border border-purple-500/40 text-purple-300">
-          Dirichlet Label Skew ($\alpha$)
+        <div class="metric-card">
+          <div class="metric-label">Validation Macro-F1</div>
+          <div class="metric-value cyan" id="valMacroF1">--</div>
+          <div class="metric-sub">Class-balanced score</div>
         </div>
-        <span class="text-blue-400 font-black">➔</span>
-        <div class="px-3 py-2 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300">
-          Client Drift Dilemma
+        <div class="metric-card">
+          <div class="metric-label">Worst Client Acc</div>
+          <div class="metric-value amber" id="valWorstAcc">--</div>
+          <div class="metric-sub">Client resilience</div>
         </div>
-        <span class="text-blue-400 font-black">➔</span>
-        <div class="px-3 py-2 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300">
-          FedAvg Failure (31.76% Worst Client)
+        <div class="metric-card">
+          <div class="metric-label">Client Disparity (Std)</div>
+          <div class="metric-value" id="valDisparity">--</div>
+          <div class="metric-sub">Inter-client variance</div>
         </div>
-        <span class="text-blue-400 font-black">➔</span>
-        <div class="px-3 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300">
-          FedProx Regularization ($\mu = 0.01$)
-        </div>
-        <span class="text-blue-400 font-black">➔</span>
-        <div class="px-3 py-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300">
-          Consensus Restored (+49.83% Rescue)
-        </div>
-        <span class="text-blue-400 font-black">➔</span>
-        <div class="px-3 py-2 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-300">
-          Edge Pareto Optimization (1.19 GB)
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 1: RESEARCH OBJECTIVES -->
-    <!-- ========================================================================= -->
-    <section id="sec-1" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 1</span>
-        <h2 class="text-xl font-black text-white">Project Overview & Scientific Scope</h2>
-      </div>
-
-      <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800 text-sm text-slate-300 leading-relaxed space-y-3">
-        <p>
-          This research addresses collaborative diagnostic intelligence across agricultural enterprises under strict data sovereignty constraints. Precision crop diagnosis via deep learning typically requires centralized cloud repositories, exposing proprietary crop breeding data and demanding unsustainable rural bandwidth.
-        </p>
-        <p>
-          We systematically investigate whether plant disease classification can be performed collaboratively across decentralized farm nodes without exchanging raw imagery, with specific emphasis on <strong>statistical heterogeneity (Non-IID label distribution skew)</strong> where regional farms specialize in disjoint crop species.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-blue-400 font-bold block uppercase">Privacy Preservation</span>
-          <p class="text-slate-400 mt-1">Raw leaf imagery remains isolated on local edge dataloaders.</p>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-emerald-400 font-bold block uppercase">Statistical Heterogeneity</span>
-          <p class="text-slate-400 mt-1">Controlled Dirichlet partitioning ($\alpha \in \{10.0, 1.0, 0.5, 0.1\}$).</p>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-purple-400 font-bold block uppercase">Architectural Comparison</span>
-          <p class="text-slate-400 mt-1">4 CNN backbones across parameter, FLOP, and communication scales.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 2: PROBLEM FORMULATION -->
-    <!-- ========================================================================= -->
-    <section id="sec-2" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 2</span>
-        <h2 class="text-xl font-black text-white">Problem Formulation: The Agricultural Edge Dilemma</h2>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="p-5 rounded-xl bg-slate-900/80 border border-rose-900/40 space-y-2">
-          <div class="text-rose-400 font-bold text-xs uppercase tracking-wider">Conventional Centralized Approach</div>
-          <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside leading-relaxed">
-            <li>Requires transmitting high-resolution leaf images over rural 3G/4G cellular connections.</li>
-            <li>Incurs massive bandwidth expenses and continuous network congestion.</li>
-            <li>Breaches farm data sovereignty, revealing proprietary yield and pest vulnerability metrics.</li>
-          </ul>
-        </div>
-        <div class="p-5 rounded-xl bg-slate-900/80 border border-emerald-900/40 space-y-2">
-          <div class="text-emerald-400 font-bold text-xs uppercase tracking-wider">Federated Learning Paradigm</div>
-          <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside leading-relaxed">
-            <li>Decouples model training from raw data collection: images remain on local hardware.</li>
-            <li>Clients exchange parameter updates $w_k$ with an aggregation server.</li>
-            <li><strong>Core Challenge:</strong> Extreme statistical heterogeneity across farms induces severe <strong>client drift</strong>.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 3: DATASET & PARTITIONING -->
-    <!-- ========================================================================= -->
-    <section id="sec-3" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 3</span>
-        <h2 class="text-xl font-black text-white">PlantVillage Dataset & Partitioning Protocol</h2>
-      </div>
-
-      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-        The benchmark comprises <strong>54,305 high-resolution leaf images across 38 distinct crop-disease categories and 14 species</strong> (Tomato, Apple, Corn, Potato, Grape, Pepper, Peach, etc.). A strict three-way partitioned split was enforced with $\text{seed}=42$:
-      </p>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="p-4 rounded-xl bg-slate-900 border border-emerald-500/40 text-center">
-          <div class="text-xs font-bold text-emerald-400 uppercase">Training Partition (70%)</div>
-          <div class="text-2xl font-black font-mono text-white mt-1">38,013</div>
-          <div class="text-[11px] text-slate-400 mt-1">Partitioned among 5 clients via $\text{Dir}(\alpha)$</div>
-        </div>
-        <div class="p-4 rounded-xl bg-slate-900 border border-blue-500/40 text-center">
-          <div class="text-xs font-bold text-blue-400 uppercase">Validation Partition (15%)</div>
-          <div class="text-2xl font-black font-mono text-white mt-1">8,146</div>
-          <div class="text-[11px] text-slate-400 mt-1">Monitored round-by-round convergence</div>
-        </div>
-        <div class="p-4 rounded-xl bg-slate-900 border border-purple-500/40 text-center">
-          <div class="text-xs font-bold text-purple-400 uppercase">Isolated Test Partition (15%)</div>
-          <div class="text-2xl font-black font-mono text-white mt-1">8,146</div>
-          <div class="text-[11px] text-slate-400 mt-1">Zero leakage; final evaluation only</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 4: MULTI-CLIENT HETEROGENEITY SETUP -->
-    <!-- ========================================================================= -->
-    <section id="sec-4" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 4</span>
-        <h2 class="text-xl font-black text-white">Client Cohort Formulation ($K = 5$ Simulated Farms)</h2>
-      </div>
-
-      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-        Five decentralized clients ($K=5$) represent regional agricultural entities. Each client holds approximately $n_k \approx 7,602$ training images. Under non-IID conditions, class distributions vary sharply across clients to simulate regional crop monoculture.
-      </p>
-
-      <!-- EMBEDDED ACTUAL DIRICHLET HEATMAP -->
-      <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-blue-400 uppercase">Empirical Dirichlet Allocation ($\alpha = 0.1$): 5 Clients $\times$ 38 Classes</span>
-          <a href="./results/figures/client_distribution_alpha_0.1.png" target="_blank" class="text-xs text-blue-400 hover:underline">Full Image ↗</a>
-        </div>
-        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex justify-center p-2">
-          <img src="./results/figures/client_distribution_alpha_0.1.png" alt="Client Distribution Alpha 0.1" class="max-h-[360px] w-auto object-contain rounded">
-        </div>
-        <p class="text-[11px] text-slate-400">
-          <strong>Figure:</strong> Heatmap of sample assignments per class. Extreme column-wise sparsity demonstrates realistic monoculture conditions where clients hold 0 samples for the majority of categories.
-        </p>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 5: PREPROCESSING PROTOCOL -->
-    <!-- ========================================================================= -->
-    <section id="sec-5" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 5</span>
-        <h2 class="text-xl font-black text-white">Image Preprocessing & Augmentation Pipeline</h2>
-      </div>
-
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-slate-400 block font-semibold">Resolution:</span>
-          <strong class="text-white font-mono">$224 \times 224$ pixels</strong>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-slate-400 block font-semibold">Augmentation:</span>
-          <strong class="text-white font-mono">RandomResizedCrop</strong>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-slate-400 block font-semibold">Perturbation:</span>
-          <strong class="text-white font-mono">Horizontal Flip + Jitter</strong>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-slate-400 block font-semibold">Normalization:</span>
-          <strong class="text-white font-mono">ImageNet Mean & Std</strong>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 6: FEDERATED LEARNING FRAMEWORK -->
-    <!-- ========================================================================= -->
-    <section id="sec-6" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 6</span>
-        <h2 class="text-xl font-black text-white">Federated Learning Framework Architecture</h2>
-      </div>
-
-      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-        Federated Learning orchestrates model training across distributed clients without data centralization. Optimization solves the global objective over $K$ client empirical loss distributions:
-      </p>
-
-      <div class="math-display-card p-4 rounded-xl text-center">
-        $$\min_{w} f(w) = \sum_{k=1}^{K} \frac{n_k}{N} F_k(w), \quad \text{where } F_k(w) = \frac{1}{n_k} \sum_{i \in \mathcal{D}_k} \mathcal{L}_{CE}(f(x_i; w), y_i)$$
-      </div>
-
-      <!-- EMBEDDED SYSTEM ARCHITECTURE FIGURE 1 -->
-      <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-blue-400 uppercase">Publication Figure 1: Federated Architecture & Execution Pipeline</span>
-          <a href="./results/figures/figure1_system_architecture.png" target="_blank" class="text-xs text-blue-400 hover:underline">Full Image ↗</a>
-        </div>
-        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex justify-center p-2">
-          <img src="./results/figures/figure1_system_architecture.png" alt="Figure 1 System Architecture" class="max-h-[380px] w-auto object-contain rounded">
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 7: 5-STAGE ROUND WORKFLOW -->
-    <!-- ========================================================================= -->
-    <section id="sec-7" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 7</span>
-        <h2 class="text-xl font-black text-white">Five Stages of a Federated Communication Round ($t$)</h2>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs">
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-blue-400 font-bold block uppercase text-[10px]">Stage 1</span>
-          <span class="text-white font-bold block mt-1">Broadcast</span>
-          <p class="text-slate-400 mt-1">Server distributes current global tensor $w^t$ to all clients.</p>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-yellow-400 font-bold block uppercase text-[10px]">Stage 2</span>
-          <span class="text-white font-bold block mt-1">Local Training</span>
-          <p class="text-slate-400 mt-1">Clients perform SGD for $E=1$ local epoch over private data.</p>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-rose-400 font-bold block uppercase text-[10px]">Stage 3</span>
-          <span class="text-white font-bold block mt-1">Client Drift</span>
-          <p class="text-slate-400 mt-1">Conflicting local class gradients pull weights in divergent directions.</p>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-emerald-400 font-bold block uppercase text-[10px]">Stage 4</span>
-          <span class="text-white font-bold block mt-1">Proximal Control</span>
-          <p class="text-slate-400 mt-1">FedProx penalizes $\|w - w^t\|_2^2$, restricting divergence.</p>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="text-purple-400 font-bold block uppercase text-[10px]">Stage 5</span>
-          <span class="text-white font-bold block mt-1">Aggregation</span>
-          <p class="text-slate-400 mt-1">Server computes weighted consensus $w^{t+1} = \sum \frac{n_k}{N} w_k^{t+1}$.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 8: FEDAVG BASELINE -->
-    <!-- ========================================================================= -->
-    <section id="sec-8" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 8</span>
-        <h2 class="text-xl font-black text-white">FedAvg: Federated Averaging Baseline Formulation</h2>
-      </div>
-
-      <div class="math-display-card p-5 rounded-xl text-center">
-        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">FedAvg Global Aggregation (McMahan et al., 2017)</div>
-        $$w^{t+1} = \sum_{k=1}^{K} \frac{n_k}{N} w_k^{t+1}$$
-      </div>
-
-      <div class="overflow-x-auto rounded-xl border border-slate-800">
-        <table class="w-full text-left text-xs sm:text-sm">
-          <thead class="bg-slate-900 text-slate-300 uppercase font-bold text-[11px]">
-            <tr>
-              <th class="p-2.5">Symbol</th>
-              <th class="p-2.5">Formal Definition</th>
-              <th class="p-2.5">Experimental Value in FedAgri</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800 bg-slate-950 font-mono text-slate-300">
-            <tr>
-              <td class="p-2.5 font-bold text-blue-400">$w^{t+1}$</td>
-              <td>Consensus parameter tensor for round $t+1$</td>
-              <td>Aggregated PyTorch state_dict</td>
-            </tr>
-            <tr>
-              <td class="p-2.5 font-bold text-blue-400">$w_k^{t+1}$</td>
-              <td>Local parameter weights optimized by client $k$</td>
-              <td>Updated CNN weights from farm $k$</td>
-            </tr>
-            <tr>
-              <td class="p-2.5 font-bold text-blue-400">$n_k$</td>
-              <td>Cardinality of client $k$'s local dataset</td>
-              <td>$n_k \approx 7,602$ to $7,603$ samples</td>
-            </tr>
-            <tr>
-              <td class="p-2.5 font-bold text-blue-400">$N$</td>
-              <td>Total training samples across all clients</td>
-              <td>$N = 38,013$ images</td>
-            </tr>
-            <tr>
-              <td class="p-2.5 font-bold text-blue-400">$K$</td>
-              <td>Active client cohort size</td>
-              <td>$K = 5$ simulated farms</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- EMBEDDED FIGURE 4 -->
-      <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-blue-400 uppercase">Publication Figure 4: FedAvg Validation F1 Trajectories Across Rounds</span>
-          <a href="./results/figures/figure4_fedavg_convergence.png" target="_blank" class="text-xs text-blue-400 hover:underline">Full Image ↗</a>
-        </div>
-        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex justify-center p-2">
-          <img src="./results/figures/figure4_fedavg_convergence.png" alt="Figure 4 FedAvg Convergence" class="max-h-[360px] w-auto object-contain rounded">
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 9: CLIENT DRIFT -->
-    <!-- ========================================================================= -->
-    <section id="sec-9" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">SECTION 9</span>
-        <h2 class="text-xl font-black text-white">The Client Drift Phenomenon under Label Skew</h2>
-      </div>
-
-      <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed space-y-2">
-        <p>
-          When client local objectives $F_k(w)$ differ strongly due to class imbalance ($\nabla F_k(w) \not\approx \nabla f(w)$), local gradient steps pull parameters toward isolated local minima.
-        </p>
-        <p>
-          Simple weighted coordinate averaging destroys critical specialized representations learned on missing categories. On <strong>ResNet50</strong>, this resulted in an unprecedented collapse: <strong>worst-client accuracy plummeted to 31.76%</strong> under severe Non-IID FedAvg ($\alpha = 0.1$).
-        </p>
-      </div>
-
-      <!-- EMBEDDED FIGURE 7: CLIENT CONSISTENCY -->
-      <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-rose-400 uppercase">Publication Figure 7: Client Consistency Disparity under FedAvg</span>
-          <a href="./results/figures/figure7_client_consistency.png" target="_blank" class="text-xs text-blue-400 hover:underline">Full Image ↗</a>
-        </div>
-        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex justify-center p-2">
-          <img src="./results/figures/figure7_client_consistency.png" alt="Figure 7 Client Consistency" class="max-h-[360px] w-auto object-contain rounded">
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 10: FEDPROX SOLUTION -->
-    <!-- ========================================================================= -->
-    <section id="sec-10" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">SECTION 10</span>
-        <h2 class="text-xl font-black text-white">FedProx: Proximal Regularization Formulation</h2>
-      </div>
-
-      <div class="math-display-card p-5 rounded-xl text-center space-y-2">
-        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">FedProx Local Objective Function (Li et al., 2020)</div>
-        $$\min_{w} h_k(w; w^t) = F_k(w) + \frac{\mu}{2} \| w - w^t \|_2^2$$
-        <div class="text-xs text-emerald-400 font-mono pt-1">
-          $$\nabla h_k(w; w^t) = \nabla F_k(w) + \mu(w - w^t)$$
+        <div class="metric-card" style="display:flex; flex-direction:column; justify-content:center; align-items:center;">
+          <button class="btn btn-danger" id="btnStopExperiment" style="width:100%; padding:0.6rem 1rem;">
+            <span>⏹ Stop Simulation</span>
+          </button>
         </div>
       </div>
 
-      <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed space-y-2">
-        <p>
-          The proximal term $\frac{\mu}{2} \| w - w^t \|_2^2$ serves as an elastic mathematical tether. As a client's local parameters $w$ drift away from global consensus $w^t$, the quadratic penalty increases, generating an inward restorative gradient $\mu(w - w^t)$ that confines client trajectory to a bounded neighborhood of the global consensus.
-        </p>
-      </div>
-
-      <!-- EMBEDDED FIGURE 6: FEDAVG VS FEDPROX -->
-      <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-emerald-400 uppercase">Publication Figure 6: Head-to-Head Convergence Comparison (FedAvg vs FedProx)</span>
-          <a href="./results/figures/figure6_fedavg_vs_fedprox_convergence.png" target="_blank" class="text-xs text-blue-400 hover:underline">Full Image ↗</a>
-        </div>
-        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex justify-center p-2">
-          <img src="./results/figures/figure6_fedavg_vs_fedprox_convergence.png" alt="Figure 6 FedAvg vs FedProx" class="max-h-[380px] w-auto object-contain rounded">
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 11: PROXIMAL COEFFICIENT DYNAMICS (μ) -->
-    <!-- ========================================================================= -->
-    <section id="sec-11" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 11</span>
-        <h2 class="text-xl font-black text-white">Proximal Regularization Dynamics: The Role of $\mu$</h2>
-      </div>
-
-      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-        The proximal coefficient $\mu \ge 0$ modulates the trade-off between local empirical risk minimization and global stability:
-      </p>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-        <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="font-mono text-amber-400 font-bold block mb-1">$\mu = 0.001$ (Under-Constrained)</span>
-          <p class="text-slate-300 leading-relaxed">Weak consensus anchor; partial client drift persists. MobileNetV3 test F1: 95.23%.</p>
-        </div>
-        <div class="p-3.5 bg-emerald-950/40 rounded-xl border border-emerald-500/60 shadow-md">
-          <span class="font-mono text-emerald-400 font-bold block mb-1">$\mu = 0.01$ (Optimal Pareto Sweet Spot ★)</span>
-          <p class="text-slate-200 leading-relaxed">Optimal equilibrium between local specialization and global consensus. Top Macro-F1: <strong>95.36% (MobileNet)</strong>, <strong>96.73% (EfficientNet)</strong>.</p>
-        </div>
-        <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="font-mono text-rose-400 font-bold block mb-1">$\mu = 0.1$ (Over-Constrained)</span>
-          <p class="text-slate-300 leading-relaxed">Excessive tethering restricts clients from fitting local feature representations. Test F1 drops to 94.62%.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 12: DIRICHLET PARAMETER (α) -->
-    <!-- ========================================================================= -->
-    <section id="sec-12" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 12</span>
-        <h2 class="text-xl font-black text-white">Dirichlet Concentration Parameter ($\alpha$) Formulation</h2>
-      </div>
-
-      <div class="math-display-card p-4 rounded-xl text-center">
-        $$p_c \sim \text{Dir}(\alpha \cdot \mathbf{1}_K), \quad \text{where } p_{c, k} \text{ is the proportion of class } c \text{ allocated to client } k$$
-      </div>
-
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <div class="font-mono font-bold text-blue-400">$\alpha = 10.0$</div>
-          <div class="text-white font-bold mt-1">Near-IID Baseline</div>
-          <div class="text-[10px] text-slate-400 mt-1">Balanced class representation; FedAvg achieves 99.68% F1.</div>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <div class="font-mono font-bold text-slate-300">$\alpha = 1.0$</div>
-          <div class="text-white font-bold mt-1">Moderate Heterogeneity</div>
-          <div class="text-[10px] text-slate-400 mt-1">Noticeable variance in regional crop counts.</div>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <div class="font-mono font-bold text-amber-400">$\alpha = 0.5$</div>
-          <div class="text-white font-bold mt-1">Strong Skew</div>
-          <div class="text-[10px] text-slate-400 mt-1">Clients lack samples across numerous disease categories.</div>
-        </div>
-        <div class="p-3 bg-rose-950/40 rounded-xl border border-rose-500/60">
-          <div class="font-mono font-bold text-rose-400">$\alpha = 0.1$ ★</div>
-          <div class="text-white font-bold mt-1">Severe Non-IID Benchmark</div>
-          <div class="text-[10px] text-slate-300 mt-1">85% of samples concentrated in 1–2 crops. Primary stress test!</div>
-        </div>
-      </div>
-
-      <!-- EMBEDDED FIGURE 5 -->
-      <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-blue-400 uppercase">Publication Figure 5: Robustness Degradation Curve Across Dirichlet Alpha</span>
-          <a href="./results/figures/figure5_noniid_robustness.png" target="_blank" class="text-xs text-blue-400 hover:underline">Full Image ↗</a>
-        </div>
-        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex justify-center p-2">
-          <img src="./results/figures/figure5_noniid_robustness.png" alt="Figure 5 Non-IID Robustness" class="max-h-[360px] w-auto object-contain rounded">
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 13: STATISTICAL HETEROGENEITY (NON-IID) -->
-    <!-- ========================================================================= -->
-    <section id="sec-13" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 13</span>
-        <h2 class="text-xl font-black text-white">Statistical Heterogeneity in Real Precision Agriculture</h2>
-      </div>
-
-      <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed space-y-2">
-        <p>
-          In biological data domains, identically distributed samples across all participating entities is an invalid assumption. Geographic microclimates, soil conditions, and economic specialization dictate crop varieties.
-        </p>
-        <p>
-          Consequently, local conditional label distributions $P_k(y)$ diverge sharply: $P_i(y) \neq P_j(y)$ for farms $i \neq j$. Evaluating federated architectures under extreme Dirichlet skew ($\alpha = 0.1$) is vital to ensuring operational reliability.
-        </p>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 14: MASTER HYPERPARAMETERS TABLE -->
-    <!-- ========================================================================= -->
-    <section id="sec-14" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 14</span>
-        <h2 class="text-xl font-black text-white">Master Experimental Hyperparameter Specification</h2>
-      </div>
-
-      <div class="overflow-x-auto rounded-xl border border-slate-800">
-        <table class="w-full text-left text-xs sm:text-sm">
-          <thead class="bg-slate-900 text-slate-300 uppercase font-bold text-[11px]">
-            <tr>
-              <th class="p-3">Hyperparameter</th>
-              <th class="p-3 text-emerald-400">Experimental Setting</th>
-              <th class="p-3">Functional Description</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800 bg-slate-950 font-mono text-slate-300">
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Communication Rounds ($T$)</td>
-              <td class="p-3 font-bold text-emerald-400">20</td>
-              <td>Total global synchronization cycles</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Local Epochs ($E$)</td>
-              <td class="p-3 font-bold text-emerald-400">1</td>
-              <td>Local SGD passes through client data per round</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Mini-Batch Size ($B$)</td>
-              <td class="p-3 font-bold text-emerald-400">32</td>
-              <td>Samples per gradient update step</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Optimizer</td>
-              <td class="p-3 font-bold text-emerald-400">Adam</td>
-              <td>Adaptive Moment Estimation ($\beta_1=0.9, \beta_2=0.999$)</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Learning Rate ($\eta$)</td>
-              <td class="p-3 font-bold text-emerald-400">$10^{-4}$ (0.0001)</td>
-              <td>Base step size across all backbones</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Dirichlet Concentration ($\alpha$)</td>
-              <td class="p-3 font-bold text-emerald-400">10.0, 1.0, 0.5, 0.1</td>
-              <td>Degree of Non-IID label distribution skew</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Proximal Coefficient ($\mu$)</td>
-              <td class="p-3 font-bold text-emerald-400">0.01</td>
-              <td>Strength of consensus penalty in FedProx</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Client Cohort ($K$)</td>
-              <td class="p-3 font-bold text-emerald-400">5</td>
-              <td>Simulated decentralized farm nodes</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Partition Seed</td>
-              <td class="p-3 font-bold text-emerald-400">42</td>
-              <td>Enforces deterministic dataset partitioning across all models</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">Input Resolution</td>
-              <td class="p-3 font-bold text-emerald-400">$224 \times 224 \times 3$</td>
-              <td>Standardized spatial input tensor dimensions</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTIONS 15–20: INDIVIDUAL PARAMETER ANALYSIS -->
-    <!-- ========================================================================= -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-      <section id="sec-15" class="glass-card rounded-2xl p-6 space-y-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">SEC 15</span>
-        <h3 class="text-base font-bold text-white">Optimization Step Size ($\eta = 0.0001$)</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          The learning rate $\eta = 10^{-4}$ governs the magnitude of parameter updates. A conservative learning rate prevents gradient explosion and catastrophic forgetting of ImageNet-pretrained representations during local fine-tuning.
-        </p>
-      </section>
-
-      <section id="sec-16" class="glass-card rounded-2xl p-6 space-y-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">SEC 16</span>
-        <h3 class="text-base font-bold text-white">Mini-Batch Stochastic Updates ($B = 32$)</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Each client processes 32 leaf samples per mini-batch. For a client holding $n_k \approx 7,602$ images, this yields $\approx 237$ stochastic gradient update iterations per local epoch.
-        </p>
-      </section>
-
-      <section id="sec-17" class="glass-card rounded-2xl p-6 space-y-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">SEC 17</span>
-        <h3 class="text-base font-bold text-white">Local Computation Budget ($E = 1$)</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Setting $E=1$ ensures that clients perform exactly one complete pass over their local training data before synchronizing with the central server, limiting local parameter divergence.
-        </p>
-      </section>
-
-      <section id="sec-18" class="glass-card rounded-2xl p-6 space-y-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">SEC 18</span>
-        <h3 class="text-base font-bold text-white">Federated Convergence Horizon ($T = 20$)</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          The global simulation runs for 20 communication rounds. Empirical validation confirms that Macro-F1 achieves asymptotic stability within 15–20 rounds across all backbones.
-        </p>
-      </section>
-
-      <section id="sec-19" class="glass-card rounded-2xl p-6 space-y-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">SEC 19</span>
-        <h3 class="text-base font-bold text-white">Adam Adaptive Moment Estimation</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Adam maintains exponentially decaying averages of past gradients ($m_t$) and squared gradients ($v_t$), stabilizing non-convex optimization on sparse, imbalanced multi-class leaf datasets.
-        </p>
-      </section>
-
-      <section id="sec-20" class="glass-card rounded-2xl p-6 space-y-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">SEC 20</span>
-        <h3 class="text-base font-bold text-white">Deterministic Partition Control ($\text{Seed} = 42$)</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Client index partitions were pre-computed with fixed seed 42 and serialized to JSON. All four CNN architectures evaluated identical client datasets, guaranteeing scientific fairness.
-        </p>
-      </section>
-
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 21: ARCHITECTURE SELECTION -->
-    <!-- ========================================================================= -->
-    <section id="sec-21" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 21</span>
-        <h2 class="text-xl font-black text-white">Architecture Selection & Centralized Baselines</h2>
-      </div>
-
-      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-        Four distinct CNN architectures representing diverse design paradigms were evaluated:
-      </p>
-
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <strong class="text-white block">MobileNetV3-Small</strong>
-          <span class="text-slate-400">1.56M params • Inverted Residuals</span>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <strong class="text-white block">EfficientNet-B0</strong>
-          <span class="text-slate-400">4.06M params • Compound Scaling</span>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <strong class="text-white block">ResNet50</strong>
-          <span class="text-slate-400">23.59M params • Deep Residual Bottlenecks</span>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800">
-          <strong class="text-white block">ConvNeXt-Tiny</strong>
-          <span class="text-slate-400">27.85M params • Modernized 7x7 Convolutions</span>
-        </div>
-      </div>
-
-      <!-- EMBEDDED FIGURE 3: CENTRALIZED BASELINES -->
-      <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-blue-400 uppercase">Publication Figure 3: Centralized Baseline Performance Across All 4 CNNs</span>
-          <a href="./results/figures/figure3_centralized_comparison.png" target="_blank" class="text-xs text-blue-400 hover:underline">Full Image ↗</a>
-        </div>
-        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex justify-center p-2">
-          <img src="./results/figures/figure3_centralized_comparison.png" alt="Figure 3 Centralized Comparison" class="max-h-[360px] w-auto object-contain rounded">
-        </div>
-        <p class="text-[11px] text-slate-400">
-          <strong>Key Validation:</strong> Centrally, all 4 models surpass 99.5% Macro-F1 (Table 3), verifying that all backbones possess ample capacity to learn the 38 classes. Any divergence in FL is purely due to aggregation dynamics.
-        </p>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTIONS 22 & 23: RESNET50 VULNERABILITY & PARAMETERS -->
-    <!-- ========================================================================= -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <section id="sec-22" class="glass-card rounded-2xl p-6 space-y-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300">SEC 22</span>
-        <h3 class="text-base font-bold text-white">Why ResNet50 Suffered Extreme Collapse</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          ResNet50 contains 23.59 million parameters. Its high capacity allows clients with skewed data to rapidly overfit to local subsets. Weight vectors from different clients diverge into orthogonal regions of parameter space, causing severe feature cancellation during coordinate averaging.
-        </p>
-      </section>
-
-      <section id="sec-23" class="glass-card rounded-2xl p-6 space-y-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">SEC 23</span>
-        <h3 class="text-base font-bold text-white">Model Representation Capacity vs Robustness</h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Higher parameter count does not correlate with federated robustness. Constrained architectures (MobileNetV3: 1.56M parameters) limit local representation drift, exhibiting natural resilience under naive FedAvg (92.98% F1 vs ResNet50's 77.05%).
-        </p>
-      </section>
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- SECTIONS 24, 25, 26: HARDWARE & EFFICIENCY PROFILING -->
-    <!-- ========================================================================= -->
-    <section id="sec-26" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTIONS 24, 25 & 26</span>
-        <h2 class="text-xl font-black text-white">Hardware Profiling: Complexity, Latency & Network Transfer</h2>
-      </div>
-
-      <div class="overflow-x-auto rounded-xl border border-slate-800">
-        <table class="w-full text-left text-xs sm:text-sm">
-          <thead class="bg-slate-900 text-slate-300 uppercase font-bold text-[11px]">
-            <tr>
-              <th class="p-3">Architecture</th>
-              <th class="p-3">Parameters</th>
-              <th class="p-3">Model Size</th>
-              <th class="p-3">Compute GFLOPs</th>
-              <th class="p-3">Inference Latency</th>
-              <th class="p-3 text-emerald-400">Total Comm (20 Rds)</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800 bg-slate-950 font-mono text-slate-300">
-            <tr class="bg-emerald-950/20 font-bold">
-              <td class="p-3 font-sans text-white">MobileNetV3-Small</td>
-              <td class="p-3">1.56 M</td>
-              <td class="p-3">5.94 MB</td>
-              <td class="p-3">0.12 GFLOPs</td>
-              <td class="p-3">3.40 ms</td>
-              <td class="p-3 text-emerald-400">1.19 GB (-94.4%)</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans text-white">EfficientNet-B0</td>
-              <td class="p-3">4.06 M</td>
-              <td class="p-3">15.47 MB</td>
-              <td class="p-3">0.82 GFLOPs</td>
-              <td class="p-3">6.93 ms</td>
-              <td class="p-3 text-indigo-400">3.09 GB</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans text-white">ResNet50</td>
-              <td class="p-3">23.59 M</td>
-              <td class="p-3">89.97 MB</td>
-              <td class="p-3">8.26 GFLOPs</td>
-              <td class="p-3">5.89 ms</td>
-              <td class="p-3 text-slate-300">17.99 GB</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans text-white">ConvNeXt-Tiny</td>
-              <td class="p-3">27.85 M</td>
-              <td class="p-3">106.24 MB</td>
-              <td class="p-3">8.98 GFLOPs</td>
-              <td class="p-3">4.12 ms</td>
-              <td class="p-3 text-rose-300">21.25 GB</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- EMBEDDED FIGURE 8: COMMUNICATION TRADEOFF -->
-      <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-amber-400 uppercase">Publication Figure 8: Communication Volume vs Accuracy Pareto Frontier</span>
-          <a href="./results/figures/figure8_communication_tradeoff.png" target="_blank" class="text-xs text-blue-400 hover:underline">Full Image ↗</a>
-        </div>
-        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex justify-center p-2">
-          <img src="./results/figures/figure8_communication_tradeoff.png" alt="Figure 8 Communication Tradeoff" class="max-h-[380px] w-auto object-contain rounded">
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTIONS 27 & 28: METRIC FORMULATION -->
-    <!-- ========================================================================= -->
-    <section id="sec-27" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTIONS 27 & 28</span>
-        <h2 class="text-xl font-black text-white">Evaluation Metric Formulation: Macro-Averaged F1</h2>
-      </div>
-
-      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-        PlantVillage contains severe natural class imbalance (from 5,357 Tomato Leaf Curl images down to 275 Potato Healthy images). Standard accuracy is heavily biased toward majority classes. We mandate <strong>Macro-F1</strong>:
-      </p>
-
-      <div class="math-display-card p-5 rounded-xl text-center space-y-3">
-        $$\text{Precision}_c = \frac{\text{TP}_c}{\text{TP}_c + \text{FP}_c}, \quad \text{Recall}_c = \frac{\text{TP}_c}{\text{TP}_c + \text{FN}_c}, \quad F_{1, c} = 2 \cdot \frac{\text{Precision}_c \cdot \text{Recall}_c}{\text{Precision}_c + \text{Recall}_c}$$
-        <div class="pt-2 border-t border-slate-800">
-          $$\text{Macro-}F_1 = \frac{1}{C} \sum_{c=1}^{C} F_{1, c} \quad (C = 38)$$
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 29: CORE EMPIRICAL RESULTS -->
-    <!-- ========================================================================= -->
-    <section id="sec-29" class="glass-card rounded-2xl p-6 sm:p-8 space-y-6 border-2 border-emerald-500/50">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">SECTION 29</span>
-        <h2 class="text-2xl font-black text-white">Core Empirical Results: The +49.83% Worst-Client Rescue</h2>
-      </div>
-
-      <div class="overflow-x-auto rounded-xl border border-slate-800">
-        <table class="w-full text-left text-xs sm:text-sm">
-          <thead class="bg-slate-900 text-slate-300 uppercase font-bold text-[11px]">
-            <tr>
-              <th class="p-3">Backbone</th>
-              <th class="p-3">Centralized F1</th>
-              <th class="p-3 text-rose-400">FedAvg F1 ($\alpha=0.1$)</th>
-              <th class="p-3 text-emerald-400">FedProx F1 ($\mu=0.01$)</th>
-              <th class="p-3 text-rose-400">FedAvg Worst Client</th>
-              <th class="p-3 text-emerald-400">FedProx Worst Client</th>
-              <th class="p-3 text-emerald-400 font-black">Worst-Client Gain</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800 bg-slate-950 font-mono text-slate-300">
-            <tr class="bg-rose-950/20">
-              <td class="p-3 font-sans font-bold text-white">ResNet50</td>
-              <td class="p-3">99.67%</td>
-              <td class="p-3 text-rose-400 font-bold">77.05%</td>
-              <td class="p-3 text-emerald-400 font-bold">96.06%</td>
-              <td class="p-3 text-rose-400 font-bold">31.76%</td>
-              <td class="p-3 text-emerald-400 font-bold">81.59%</td>
-              <td class="p-3 text-emerald-400 font-black bg-emerald-950/50">+49.83%</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">EfficientNet-B0</td>
-              <td class="p-3">99.71%</td>
-              <td class="p-3 text-amber-400">87.16%</td>
-              <td class="p-3 text-emerald-400 font-bold">96.73%</td>
-              <td class="p-3 text-amber-400">63.26%</td>
-              <td class="p-3 text-emerald-400 font-bold">91.44%</td>
-              <td class="p-3 text-emerald-400 font-black bg-emerald-950/50">+28.18%</td>
-            </tr>
-            <tr>
-              <td class="p-3 font-sans font-bold text-white">ConvNeXt-Tiny</td>
-              <td class="p-3">99.59%</td>
-              <td class="p-3 text-amber-400">88.63%</td>
-              <td class="p-3 text-emerald-400 font-bold">95.20%</td>
-              <td class="p-3 text-slate-300">78.15%</td>
-              <td class="p-3 text-emerald-400 font-bold">91.67%</td>
-              <td class="p-3 text-emerald-400 font-black bg-emerald-950/50">+13.52%</td>
-            </tr>
-            <tr class="bg-emerald-950/20">
-              <td class="p-3 font-sans font-bold text-white">MobileNetV3-Small</td>
-              <td class="p-3">99.53%</td>
-              <td class="p-3 text-blue-400 font-bold">92.98%</td>
-              <td class="p-3 text-emerald-400 font-bold">95.36%</td>
-              <td class="p-3 text-blue-400 font-bold">84.16%</td>
-              <td class="p-3 text-emerald-400 font-bold">90.85%</td>
-              <td class="p-3 text-emerald-400 font-black bg-emerald-950/50">+6.69%</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- SIDE-BY-SIDE CONFUSION MATRICES (FIGURES 9A, 9B, 9C) -->
-      <div class="space-y-3 pt-2">
-        <div class="text-xs font-bold text-white uppercase tracking-wider">
-          Publication Figure 9: 38-Class Normalized Test Confusion Matrices
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1 text-center">
-            <div class="text-[11px] font-bold text-blue-400">Fig 9A: Centralized MobileNet</div>
-            <img src="./results/figures/figure9a_cm_centralized.png" alt="Fig 9A Centralized CM" class="w-full rounded border border-slate-800">
-            <span class="text-[10px] text-slate-400">Diagonal purity baseline</span>
+      <!-- Live Dual Charts -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>📈 Global Convergence Trajectory</h3>
+            <span class="tab-badge">Accuracy, F1 & Loss</span>
           </div>
-          <div class="p-3 bg-slate-900 rounded-xl border border-rose-900/50 space-y-1 text-center">
-            <div class="text-[11px] font-bold text-rose-400">Fig 9B: FedAvg ($\alpha=0.1$)</div>
-            <img src="./results/figures/figure9b_cm_fedavg_severe.png" alt="Fig 9B FedAvg CM" class="w-full rounded border border-slate-800">
-            <span class="text-[10px] text-rose-300">Off-diagonal false positive bleed</span>
+          <div class="chart-box">
+            <canvas id="chartConvergence"></canvas>
           </div>
-          <div class="p-3 bg-slate-900 rounded-xl border border-emerald-900/50 space-y-1 text-center">
-            <div class="text-[11px] font-bold text-emerald-400">Fig 9C: FedProx Rescued</div>
-            <img src="./results/figures/figure9c_cm_fedprox_severe.png" alt="Fig 9C FedProx CM" class="w-full rounded border border-slate-800">
-            <span class="text-[10px] text-emerald-300">Diagonal integrity restored</span>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>⚖️ Client Robustness & Disparity</h3>
+            <span class="tab-badge">Mean vs Worst & Drift</span>
+          </div>
+          <div class="chart-box">
+            <canvas id="chartRobustness"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Client Fleet Grid & Live Activity Log -->
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem;">
+        
+        <!-- Virtual Client Matrix -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>🚜 Virtual Client Fleet Matrix</h3>
+            <span class="header-desc">Simulated private edge nodes</span>
+          </div>
+          <div class="client-fleet-grid" id="clientFleetGrid">
+            <!-- Dynamically populated with client nodes -->
+          </div>
+        </div>
+
+        <!-- Telemetry Log Terminal -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>📡 Event Stream & Telemetry Feed</h3>
+            <span class="tab-badge">Real-Time</span>
+          </div>
+          <div class="event-terminal" id="liveEventsTerminal">
+            <div class="event-line">
+              <span class="time">[--:--:--]</span>
+              <span class="type">SYSTEM</span>
+              <span class="msg">Connected to FedAgri simulation telemetry engine.</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ========================================================================= -->
-    <!-- SECTION 30: DEPLOYMENT RECOMMENDATIONS -->
-    <!-- ========================================================================= -->
-    <section id="sec-30" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 30</span>
-        <h2 class="text-xl font-black text-white">Operational Deployment Strategy (Dual Paradigm)</h2>
+    <!-- ============================================================== -->
+    <!-- VIEW 3: BENCHMARK RESULTS & EXPLORER                           -->
+    <!-- ============================================================== -->
+    <section class="view-section" id="view-results">
+      
+      <!-- Multi-run comparison table -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div>
+            <h2>📊 Empirical Research Experiments (Tables 4 & 5)</h2>
+            <span class="header-desc">Evaluated on the strictly isolated 38-class test split (8,146 images)</span>
+          </div>
+          <span class="tab-badge">Reproducible Benchmarks</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Algorithm</th>
+                <th>Heterogeneity</th>
+                <th>μ (FedProx)</th>
+                <th>Rounds</th>
+                <th>Test Accuracy</th>
+                <th>Macro-F1</th>
+                <th>Worst Client</th>
+                <th>Client Std</th>
+                <th>Time (s)</th>
+                <th>Weights</th>
+              </tr>
+            </thead>
+            <tbody id="resultsTableBody">
+              <!-- Dynamically populated by app.js -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="p-5 bg-emerald-950/30 border border-emerald-500/40 rounded-xl space-y-2">
-          <div class="text-emerald-400 font-bold text-xs uppercase tracking-wider">Tier 1: Resource-Constrained Field Traps</div>
-          <h3 class="text-base font-bold text-white">MobileNetV3-Small</h3>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            Optimal for solar/battery IoT edge devices (Raspberry Pi 5, Jetson Orin Nano). Consumes only <strong>1.19 GB cumulative bandwidth (94.4% reduction)</strong>, executes inference in 3.4 ms, and guarantees <strong>95.36% FedProx F1</strong>.
-          </p>
+      <!-- Pareto Scatter Chart & Publication Figures -->
+      <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem;">
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>⚡ Communication vs Performance (Pareto)</h3>
+            <span class="tab-badge">Figure 8</span>
+          </div>
+          <div class="chart-box" style="height: 380px;">
+            <canvas id="chartPareto"></canvas>
+          </div>
         </div>
 
-        <div class="p-5 bg-indigo-950/30 border border-indigo-500/40 rounded-xl space-y-2">
-          <div class="text-indigo-400 font-bold text-xs uppercase tracking-wider">Tier 2: Regional Cooperative Hubs</div>
-          <h3 class="text-base font-bold text-white">EfficientNet-B0</h3>
-          <p class="text-xs text-slate-300 leading-relaxed">
-            Optimal for regional agricultural servers with wired broadband. Delivers the highest overall federated accuracy (<strong>96.73% Macro-F1</strong>, 91.44% worst-client consistency) with a manageable 3.09 GB bandwidth footprint.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 31: COMPLETE PARAMETER CHEAT SHEET -->
-    <!-- ========================================================================= -->
-    <section id="sec-31" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 31</span>
-        <h2 class="text-xl font-black text-white">Complete Parameter Reference Directory</h2>
-      </div>
-
-      <div class="overflow-x-auto rounded-xl border border-slate-800">
-        <table class="w-full text-left text-xs sm:text-sm">
-          <thead class="bg-slate-900 text-slate-300 uppercase font-bold text-[11px]">
-            <tr>
-              <th class="p-2.5">Parameter</th>
-              <th class="p-2.5 text-blue-400">Configured Value</th>
-              <th class="p-2.5">Academic Significance</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800 bg-slate-950 font-mono text-slate-300">
-            <tr><td class="p-2 font-sans font-bold">Dataset</td><td class="text-blue-400">PlantVillage</td><td>Benchmark plant leaf pathology dataset</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Total Samples</td><td class="text-blue-400">54,305</td><td>Total image pool across 38 classes and 14 species</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Split Ratio</td><td class="text-blue-400">70% / 15% / 15%</td><td>38,013 train, 8,146 validation, 8,146 isolated test</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Concentration ($\alpha$)</td><td class="text-blue-400">10.0, 1.0, 0.5, 0.1</td><td>Dirichlet statistical heterogeneity concentration parameter</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Proximal ($\mu$)</td><td class="text-blue-400">0.01</td><td>Optimal consensus constraint coefficient in FedProx</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Rounds ($T$)</td><td class="text-blue-400">20</td><td>Total global server-client aggregation epochs</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Local Epochs ($E$)</td><td class="text-blue-400">1</td><td>Local client dataset iterations prior to synchronization</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Batch Size ($B$)</td><td class="text-blue-400">32</td><td>Mini-batch stochastic gradient step cardinality</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Optimizer & $\eta$</td><td class="text-blue-400">Adam ($10^{-4}$)</td><td>Adaptive moment optimizer with base learning rate 0.0001</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Control Seed</td><td class="text-blue-400">42</td><td>Fixed seed enforcing deterministic client partition reuse</td></tr>
-            <tr><td class="p-2 font-sans font-bold">Primary Metric</td><td class="text-blue-400">Macro-F1</td><td>Equal-weighted multi-class diagnostic evaluation</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 32: THE 5 CRITICAL PARAMETERS -->
-    <!-- ========================================================================= -->
-    <section id="sec-32" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 32</span>
-        <h2 class="text-xl font-black text-white">The Five Foundational System Parameters</h2>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
-        <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="font-mono text-emerald-400 font-bold text-sm block">1. $\alpha$</span>
-          <span class="text-white font-bold block mt-1">Data Skew</span>
-          <p class="text-slate-400 mt-1">Controls degree of Dirichlet statistical heterogeneity.</p>
-        </div>
-        <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="font-mono text-emerald-400 font-bold text-sm block">2. $\mu$</span>
-          <span class="text-white font-bold block mt-1">Consensus Anchor</span>
-          <p class="text-slate-400 mt-1">Elastic tether preventing client drift from global weights.</p>
-        </div>
-        <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="font-mono text-emerald-400 font-bold text-sm block">3. $\eta$</span>
-          <span class="text-white font-bold block mt-1">Learning Rate</span>
-          <p class="text-slate-400 mt-1">Gradient step size during local parameter updates.</p>
-        </div>
-        <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="font-mono text-emerald-400 font-bold text-sm block">4. $E$</span>
-          <span class="text-white font-bold block mt-1">Local Epochs</span>
-          <p class="text-slate-400 mt-1">Local computation budget between network communications.</p>
-        </div>
-        <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800">
-          <span class="font-mono text-emerald-400 font-bold text-sm block">5. $T$</span>
-          <span class="text-white font-bold block mt-1">Rounds</span>
-          <p class="text-slate-400 mt-1">Total global federated synchronization cycles.</p>
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>🖼️ Scientific Publication Gallery</h3>
+            <span class="header-desc">Click any figure to expand in full resolution</span>
+          </div>
+          <div class="figures-gallery-grid" id="figuresGallery" style="max-height: 380px; overflow-y: auto;">
+            <!-- Dynamically populated with figure thumbnails -->
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ========================================================================= -->
-    <!-- SECTION 33: EXECUTIVE TECHNICAL SUMMARY -->
-    <!-- ========================================================================= -->
-    <section id="sec-33" class="glass-card rounded-2xl p-6 sm:p-8 space-y-4 border-2 border-blue-500/50">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">SECTION 33</span>
-        <h2 class="text-xl font-black text-white">Executive Technical Summary</h2>
+    <!-- ============================================================== -->
+    <!-- VIEW 4: PLANT DISEASE DIAGNOSTIC PLAYGROUND                    -->
+    <!-- ============================================================== -->
+    <section class="view-section" id="view-diagnostics">
+      <div class="diagnostic-container">
+        
+        <!-- Left Column: Input Selection & Checkpoint Picker -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>🌿 Leaf Image Input & Checkpoint</h3>
+          </div>
+
+          <!-- Select Trained Checkpoint -->
+          <div class="form-group">
+            <label class="form-label" for="selectDiagnosticCkpt">Trained Model Checkpoint</label>
+            <select class="form-select" id="selectDiagnosticCkpt">
+              <!-- Dynamically populated from /api/checkpoints -->
+            </select>
+          </div>
+
+          <!-- Image Dropzone -->
+          <div class="image-dropzone" id="imageDropzone">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            <div id="dropzonePlaceholder">
+              <span style="font-size: 2.2rem;">📸</span>
+              <p style="margin-top: 0.5rem; font-weight: 500;">Drop leaf image here or click to browse</p>
+              <p style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.2rem;">Supports JPG, PNG (RGB leaves)</p>
+            </div>
+            <div class="image-preview-box">
+              <img id="previewImg" src="" alt="Preview" style="display: none;">
+            </div>
+          </div>
+
+          <!-- Quick Test Samples Strip -->
+          <div style="margin-top: 1.2rem;">
+            <label class="form-label">Or Pick a Sample Test Leaf:</label>
+            <div class="samples-strip" id="samplesStrip">
+              <!-- Dynamically populated with thumbnail images -->
+            </div>
+          </div>
+
+          <!-- Diagnose Button -->
+          <button class="btn btn-primary" id="btnRunDiagnosis" style="width: 100%; margin-top: 1.5rem; padding: 0.9rem;">
+            <span>🔬 Diagnose Crop Leaf</span>
+          </button>
+        </div>
+
+        <!-- Right Column: Diagnostic Output & Treatment Prescription -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>📋 Diagnostic Assessment & Agronomic Advisory</h3>
+            <span class="tab-badge" id="diagLatency">Ready</span>
+          </div>
+
+          <div id="diagnosisResultCard" style="display: none;">
+            <div class="diagnosis-header">
+              <div>
+                <span style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase;">Diagnosed Crop</span>
+                <div style="font-size: 1.35rem; font-weight: 700; color: #f0fdf4;" id="diagCropName">Tomato</div>
+                <div style="font-size: 1.1rem; color: #34d399;" id="diagDiseaseName">Early Blight</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="severity-badge severity-High" id="diagSeverityBadge">Severe</span>
+                <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-light); margin-top: 0.25rem;" id="diagConfidence">98.4%</div>
+              </div>
+            </div>
+
+            <!-- Top Candidates Probability Bars -->
+            <label class="form-label" style="margin-top: 1rem;">Candidate Predictions (Top Logits):</label>
+            <div id="diagTopKList">
+              <!-- Dynamically populated with bars -->
+            </div>
+
+            <!-- Agronomic Treatment Prescription -->
+            <div class="advisory-box">
+              <h4>🛡️ Treatment & Agronomic Prescription</h4>
+              <p id="diagDiseaseDesc" style="color: #cbd5e1; margin-bottom: 0.6rem; font-size: 0.85rem; line-height: 1.4;"></p>
+              <p id="diagRemedy" style="color: #f0fdf4; font-size: 0.88rem; line-height: 1.5; font-weight: 500;"></p>
+            </div>
+          </div>
+
+          <!-- Placeholder when idle -->
+          <div id="diagnosisIdlePlaceholder" style="text-align: center; padding: 4rem 2rem; color: #64748b;">
+            <span style="font-size: 3rem; display: block; margin-bottom: 0.5rem;">🌱</span>
+            <p style="font-size: 0.95rem;">Select an image and click <b>Diagnose Crop Leaf</b> to run real-time PyTorch inference.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 5: DATASET & PARTITION EXPLORER                           -->
+    <!-- ============================================================== -->
+    <section class="view-section" id="view-dataset">
+      
+      <!-- Dataset Top Stats -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Images</div>
+          <div class="metric-value accent" id="dsTotalImages">54,305</div>
+          <div class="metric-sub">PlantVillage color dataset</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Disease Classes</div>
+          <div class="metric-value cyan" id="dsClassesCount">38</div>
+          <div class="metric-sub">Healthy & diseased states</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Crops Represented</div>
+          <div class="metric-value amber" id="dsCropsCount">14</div>
+          <div class="metric-sub">Apple, Tomato, Grape, etc.</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Dataset Split</div>
+          <div class="metric-value" style="font-size: 1.15rem;">70% / 15% / 15%</div>
+          <div class="metric-sub">Train / Val / Test (Isolated)</div>
+        </div>
       </div>
 
-      <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed space-y-3">
-        <p>
-          This research delivers a rigorous empirical investigation of Federated Learning for plant disease diagnosis on 54,305 PlantVillage images across 38 categories under controlled statistical heterogeneity.
-        </p>
-        <p>
-          Under extreme Dirichlet label skew ($\alpha = 0.1$), standard FedAvg causes catastrophic client drift in deep architectures, causing ResNet50 worst-client accuracy to collapse to <strong>31.76%</strong>. FedProx proximal regularization ($\mu = 0.01$) eliminates divergence, restoring worst-client accuracy to <strong>81.59% (+49.83% gain)</strong> and lifting global Macro-F1 to <strong>96.06%</strong>. EfficientNet-B0 achieves top overall F1 at <strong>96.73%</strong>.
-        </p>
-        <p>
-          Hardware profiling demonstrates that <strong>MobileNetV3-Small</strong> provides the premier edge solution—achieving <strong>95.36% FedProx F1</strong> while consuming only <strong>1.19 GB cumulative communication (94.4% less network overhead than ConvNeXt-Tiny)</strong> with an inference latency of 3.40 ms.
-        </p>
+      <!-- Non-IID Dirichlet Partition Distribution -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div>
+            <h3>📈 Dirichlet Non-IID Client Data Skew (α)</h3>
+            <span class="header-desc">Simulates label heterogeneity across agricultural clients</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="selectPartitionAlpha" style="font-size: 0.85rem; color: #94a3b8;">Distribution:</label>
+            <select class="form-select" id="selectPartitionAlpha" style="width: 170px; padding: 0.4rem 0.8rem;">
+              <option value="0.1" selected>Severe Non-IID (α=0.1)</option>
+              <option value="0.5">Strong Non-IID (α=0.5)</option>
+              <option value="1.0">Moderate Non-IID (α=1.0)</option>
+              <option value="10.0">Near-IID (α=10.0)</option>
+              <option value="iid">Uniform IID</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="chart-box" style="height: 280px;">
+          <canvas id="chartPartition"></canvas>
+        </div>
+      </div>
+
+      <!-- Classes Browser -->
+      <div class="glass-card">
+        <div class="card-header">
+          <div>
+            <h3>🍃 PlantVillage 38 Classes Catalog</h3>
+            <span class="header-desc">Browse crop pathologies, biological causal agents, and health labels</span>
+          </div>
+          <input type="text" class="form-control" id="classSearchInput" placeholder="Search crops or diseases..." style="width: 250px;">
+        </div>
+
+        <div class="model-grid" id="classesGrid" style="max-height: 480px; overflow-y: auto;">
+          <!-- Dynamically populated by app.js -->
+        </div>
       </div>
     </section>
 
   </main>
 
-  <!-- ========================================================================= -->
-  <!-- FOOTER -->
-  <!-- ========================================================================= -->
-  <footer class="text-center text-xs text-slate-500 py-8 border-t border-slate-900 bg-slate-950 mt-16">
-    <p class="font-bold text-slate-400">FedAgri-Robust: Academic Presentation Dashboard</p>
-    <p class="mt-1">PyTorch 2.14 • Flower 1.30 • PlantVillage 38 Classes • RTX 4060 Ti Simulation</p>
-  </footer>
+  <!-- Modal for High-Resolution Scientific Figures -->
+  <div class="modal-overlay" id="figureModal">
+    <div class="modal-content">
+      <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+      <h3 id="modalFigureTitle" style="margin-bottom: 0.5rem;">Figure Preview</h3>
+      <p id="modalFigureDesc" style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem;"></p>
+      <img id="modalFigureImg" src="" alt="Full Figure" style="width: 100%; border-radius: var(--radius-md); background: #fff;">
+    </div>
+  </div>
 
-  <!-- ========================================================================= -->
-  <!-- CONTROLLER SCRIPT -->
-  <!-- ========================================================================= -->
-  <script>
-    function scrollToSection(id) {
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/websocket.js"></script>
+  <script src="/js/charts.js"></script>
+  <script src="/js/app.js"></script>
 
-    // Initialize KaTeX Auto-Render
-    document.addEventListener("DOMContentLoaded", function() {
-      if (window.renderMathInElement) {
-        renderMathInElement(document.body, {
-          delimiters: [
-            {left: '$$', right: '$$', display: true},
-            {left: '$', right: '$', display: false}
-          ],
-          throwOnError: false
-        });
-      }
-    });
-  </script>
 </body>
 </html>
