@@ -24,9 +24,16 @@ wheels/
 
 # Data & checkpoints (keep code repo lightweight)
 data/raw/
+data/processed/partitions/*
+!data/processed/partitions/partition_alpha_0.1_seed42.json
+!data/processed/partitions/partition_alpha_0.5_seed42.json
+!data/processed/partitions/partition_alpha_1.0_seed42.json
+!data/processed/partitions/partition_alpha_10.0_seed42.json
+!data/processed/partitions/partition_iid_seed42.json
 results/checkpoints/*.pt
 results/runs/*
 !results/runs/.gitkeep
+results/logs/*_*_*_*_*_rounds.csv
 *.pt
 *.pth
 

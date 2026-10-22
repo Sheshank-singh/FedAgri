@@ -128,7 +128,7 @@ class FederatedServer:
 
     def _setup_clients(self) -> List[VirtualFederatedClient]:
         train_samples = load_split_data("train", self.config_path)
-        partition_dict = load_client_partition(alpha=self.alpha, is_iid=self.is_iid, config_path=self.config_path)
+        partition_dict = load_client_partition(alpha=self.alpha, is_iid=self.is_iid, num_clients=self.num_clients, config_path=self.config_path)
 
         clients = []
         for cid in range(self.num_clients):

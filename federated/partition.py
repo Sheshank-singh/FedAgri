@@ -7,9 +7,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 import json
 import yaml
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 from data.dataset import load_split_data
 
@@ -205,31 +207,73 @@ def visualize_partition_distribution(
 
 
 def load_client_partition(
-    alpha: float = None,
+    alpha: Optional[float] = None,
     is_iid: bool = False,
+    num_clients: Optional[int] = None,
     config_path: str = "configs/config.yaml"
 ) -> Dict[int, List[int]]:
     """
-    Loads pre-saved partition dictionary for fair comparison across all architectures.
+    Loads or generates client partition dictionary for federated training.
+    Supports any arbitrary Dirichlet alpha parameter and client counts dynamically on-the-fly.
     """
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
     seed = cfg["seed"]
+    default_clients = cfg["federated"].get("num_clients", 5)
+    target_clients = int(num_clients) if num_clients is not None else default_clients
     processed_dir = cfg["dataset"].get("processed_dir", "data/processed")
     partitions_dir = os.path.join(processed_dir, "partitions")
+    os.makedirs(partitions_dir, exist_ok=True)
 
     if is_iid or alpha is None:
-        filename = f"partition_iid_seed{seed}.json"
+        filename = f"partition_iid_seed{seed}.json" if target_clients == default_clients else f"partition_iid_clients_{target_clients}_seed{seed}.json"
     else:
-        filename = f"partition_alpha_{alpha}_seed{seed}.json"
+        alpha_clean = round(float(alpha), 2)
+        alpha_str = str(float(alpha_clean)) if alpha_clean.is_integer() else str(alpha_clean)
+        filename = f"partition_alpha_{alpha_str}_seed{seed}.json" if target_clients == default_clients else f"partition_alpha_{alpha_str}_clients_{target_clients}_seed{seed}.json"
 
     filepath = os.path.join(partitions_dir, filename)
+
     if not os.path.exists(filepath):
-        print(f"Partition file {filepath} not found. Generating now...")
-        create_and_save_partitions(config_path)
+        print(f"[Partition Engine] Partition file '{filename}' not found. Generating on-the-fly (alpha={alpha}, clients={target_clients})...")
+        train_samples = load_split_data("train", config_path)
+        num_classes = cfg["dataset"].get("num_classes", 38)
+
+        if is_iid or alpha is None:
+            parts = partition_iid(train_samples, num_clients=target_clients, seed=seed)
+        else:
+            parts = partition_dirichlet(
+                train_samples,
+                num_classes=num_classes,
+                num_clients=target_clients,
+                alpha=float(alpha),
+                seed=seed
+            )
+
+        with open(filepath, "w") as f:
+            json.dump(parts, f)
+        print(f"[Partition Engine] Successfully saved new partition -> {filepath}")
 
     with open(filepath, "r") as f:
         data = json.load(f)
+
+    # If the loaded partition doesn't have enough clients, re-generate on-the-fly
+    if len(data) < target_clients:
+        print(f"[Partition Engine] Partition had {len(data)} clients, needed {target_clients}. Regenerating...")
+        train_samples = load_split_data("train", config_path)
+        num_classes = cfg["dataset"].get("num_classes", 38)
+        if is_iid or alpha is None:
+            data = partition_iid(train_samples, num_clients=target_clients, seed=seed)
+        else:
+            data = partition_dirichlet(
+                train_samples,
+                num_classes=num_classes,
+                num_clients=target_clients,
+                alpha=float(alpha),
+                seed=seed
+            )
+        with open(filepath, "w") as f:
+            json.dump(data, f)
 
     return {int(k): v for k, v in data.items()}
 

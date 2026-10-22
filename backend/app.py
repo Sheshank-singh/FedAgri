@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from backend.orchestrator import orchestrator
 from backend.inference import predict_leaf_disease, load_classes_mapping, REMEDIES
 from models.model_factory import MODEL_REGISTRY, count_parameters, get_model_size_mb, compute_flops, measure_inference_latency, create_model
+from federated.partition import load_client_partition
 
 
 app = FastAPI(
@@ -211,30 +212,19 @@ async def get_sample_images():
 
 
 @app.get("/api/dataset/partitions")
-async def get_partition_distribution(alpha: Optional[float] = Query(0.1), is_iid: bool = Query(False)):
-    """Returns client sample allocations for Dirichlet non-IID partition visualization."""
-    partitions_dir = "data/processed/partitions"
-    fname = "partition_iid_seed42.json" if is_iid else f"partition_alpha_{alpha}_seed42.json"
-    full_path = os.path.join(partitions_dir, fname)
-
-    if not os.path.exists(full_path):
-        # Look for default
-        full_path = os.path.join(partitions_dir, "partition_alpha_0.1_seed42.json")
-
-    if not os.path.exists(full_path):
-        return {"error": "Partitions not generated yet."}
-
-    with open(full_path, "r") as f:
-        data = json.load(f)
-
-    # Convert keys to integers
-    client_counts = {int(k): len(v) for k, v in data.items()}
-    return {
-        "alpha": "IID" if is_iid else alpha,
-        "num_clients": len(data),
-        "client_sample_counts": client_counts,
-        "total_partitioned_samples": sum(client_counts.values())
-    }
+async def get_partition_distribution(alpha: Optional[float] = Query(0.1), is_iid: bool = Query(False), num_clients: Optional[int] = Query(5)):
+    """Returns client sample allocations for Dirichlet non-IID partition visualization (on-the-fly for any alpha)."""
+    try:
+        data = load_client_partition(alpha=alpha, is_iid=is_iid, num_clients=num_clients)
+        client_counts = {int(k): len(v) for k, v in data.items()}
+        return {
+            "alpha": "IID" if is_iid else alpha,
+            "num_clients": len(data),
+            "client_sample_counts": client_counts,
+            "total_partitioned_samples": sum(client_counts.values())
+        }
+    except Exception as e:
+        return {"error": f"Failed to compute partition: {str(e)}"}
 
 
 @app.get("/api/experiments")
